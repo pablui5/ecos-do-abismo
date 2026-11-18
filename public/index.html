@@ -324,6 +324,16 @@ body.big .pane,body.big .modal,body.big .hint,body.big .tip{zoom:1.15}
 body.big .drawer>*{zoom:1.1}
 body.big .hotbar .an{font-size:11px}
 
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.mode{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 11px;border-radius:10px;border:1px solid var(--line);background:linear-gradient(180deg,var(--panel3),var(--panel2));cursor:pointer;min-height:44px;transition:border-color .15s,box-shadow .15s}
+.mode b{font-size:15px;font-weight:700}
+.mode small{font-size:11.5px;color:var(--muted);line-height:1.3}
+.mode:hover{border-color:var(--line2)}
+.mode.facil.on{border-color:#3d9a5c;box-shadow:0 0 0 1px #3d9a5c,0 0 16px rgba(111,208,140,.2)}.mode.facil b{color:#8fe0a6}
+.mode.normal.on{border-color:var(--abyss);box-shadow:0 0 0 1px var(--abyss),0 0 16px rgba(92,198,255,.2)}.mode.normal b{color:#bfe6ff}
+.mode.dificil.on{border-color:var(--blood);box-shadow:0 0 0 1px var(--blood),0 0 16px rgba(226,82,63,.22)}.mode.dificil b{color:#f3a99e}
+.drawer .modes{grid-template-columns:minmax(0,1fr)}
+@media (max-width:520px){.modes{grid-template-columns:minmax(0,1fr)}.mode{flex-direction:row;align-items:baseline;gap:8px}.mode b{flex:none;width:64px}}
 /* ---------- Animações ---------- */
 @keyframes rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
 @keyframes pop{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
@@ -517,7 +527,7 @@ function doubleDice(expr){ const m = String(expr).match(/^(\d*)d(\d+)(.*)$/); re
 /* =====================================================================
    OPÇÕES (lembradas só neste navegador)
    ===================================================================== */
-const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, autoEnd:true, follow:true, cam:'tatica', gmView:false, gmControl:false, light:1 };
+const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, autoEnd:true, follow:true, ctrl:'facil', cam:'tatica', gmView:false, gmControl:false, light:1 };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('ecos.set') || '{}')); } catch(e){}
 function saveSet(){ try { localStorage.setItem('ecos.set', JSON.stringify(SET)); } catch(e){} }
 
@@ -3375,7 +3385,7 @@ function renderHUD(){ renderPhase(); renderInit(); renderHotbar(); renderPane();
 function renderPhase(){
   const el = $('phase');
   if (G.mode === 'combat'){ el.textContent = `Combate · rodada ${G.round}`; el.className = 'phase combat'; }
-  else if (G.mode === 'explore'){ el.textContent = 'Exploração'; el.className = 'phase'; }
+  else if (G.mode === 'explore'){ el.textContent = `Exploração · ${MODES[mode()].n}`; el.className = 'phase'; }
   else el.textContent = 'Preparando a descida';
   $('btnGM').classList.toggle('on', UI.drawer === 'gm' || SET.gmView || SET.gmControl);
   $('btnShop').disabled = G.mode !== 'explore';
@@ -3423,7 +3433,7 @@ function renderHotbar(){
     b.addEventListener('mouseenter', ev => showAbilityTip(u, id, ev)); b.addEventListener('mouseleave', hideTip);
     el.append(b);
   });
-  if (G.mode === 'combat') el.append(h('button', {class:'ab end' + (u.acted && (u.moveLeft === 0 || u.bonus) ? ' ready' : ''), type:'button', disabled:G.busy, onclick: () => { if (!G.busy) endTurn(); }, html:`<span class="key">␣</span>${svgIcon('end')}<span class="an">Encerrar</span>`}));
+  if (G.mode === 'combat') el.append(h('button', {class:'ab end' + (isEasy() && u.acted && (u.moveLeft === 0 || u.bonus) ? ' ready' : ''), type:'button', disabled:G.busy, onclick: () => { if (!G.busy) endTurn(); }, html:`<span class="key">␣</span>${svgIcon('end')}<span class="an">Encerrar</span>`}));
 }
 function showAbilityTip(u, id, ev){
   const ab = abilityInfo(u, id), ok = canUse(u, id), act = actOf(u, id);
@@ -3766,15 +3776,16 @@ function renderOpts(){
   const q = h('select', {id:'oQual'}, [['baixa','Baixa (sem sombras)'],['media','Média'],['alta','Alta']].map(([v, l]) => h('option', {value:v, text:l})));
   q.value = SET.quality; q.addEventListener('change', () => { SET.quality = q.value; saveSet(); applyQuality(); });
   const chk = (id, label, key, fn) => { const i = h('input', {type:'checkbox', id, checked:SET[key]}); i.addEventListener('change', () => { SET[key] = i.checked; saveSet(); fn && fn(); }); return h('label', {class:'check', for:id}, i, label); };
-  el.append(h('h2', {text:'Opções'}),
+  appendAll(el, h('h2', {text:'Opções'}),
+    h('span', {class:'lbl', text:'Modo de jogo'}), modePicker(),
+    isEasy() ? chk('oAuto', 'Encerrar o turno sozinho quando não sobrar nada', 'autoEnd') : null,
+    isEasy() ? chk('oFollow', 'Grupo segue o herói escolhido fora do combate', 'follow') : null,
     h('div', {class:'field'}, h('label', {for:'oQual', text:'Qualidade gráfica'}), q),
     chk('oRed', 'Efeitos reduzidos (menos partículas e tremores)', 'reduced'),
     chk('oBase', 'Base de miniatura sob os personagens', 'base', () => G.units.forEach(u => { if (u.m.base){ u.m.base.visible = SET.base; u.m.lift = SET.base ? .09 : 0; u.bar.s.position.y = u.m.height + .45 + u.m.lift; } })),
     chk('oGrid', 'Grade tática', 'grid', () => { W3.grid.visible = SET.grid; }),
-    chk('oHint', 'Dicas para iniciantes no topo da tela', 'hints', () => { UI.hintHide = null; renderHint(); }),
+    mode() !== 'dificil' && chk('oHint', 'Dicas no topo da tela', 'hints', () => { UI.hintHide = null; renderHint(); }),
     chk('oBig', 'Texto maior', 'big', applyBig),
-    chk('oAuto', 'Encerrar o turno sozinho quando não sobrar nada', 'autoEnd'),
-    chk('oFollow', 'Grupo segue o herói escolhido fora do combate', 'follow'),
     chk('oSnd', 'Som', 'sound', () => { audioInit(); setSound(SET.sound); }),
     h('span', {class:'lbl', text:'Câmera'}),
     h('div', {class:'row'}, h('button', {class:'btn' + (SET.cam === 'tatica' ? ' gold' : ''), type:'button', onclick: () => setCamMode('tatica')}, 'Visão tática'), h('button', {class:'btn' + (SET.cam === 'proxima' ? ' gold' : ''), type:'button', onclick: () => setCamMode('proxima')}, 'Câmera próxima')),
@@ -4045,9 +4056,18 @@ function openStatus(){
 /* =====================================================================
    CONTROLES FÁCEIS: tocar no inimigo ataca, grupo segue, turno acaba sozinho
    ===================================================================== */
+const MODES = {facil:{n:'Fácil', d:'Ajuda em tudo: ataca chegando perto, grupo junto, turno passa sozinho e dicas completas.'}, normal:{n:'Normal', d:'Você controla tudo. Só avisos curtos.'}, dificil:{n:'Difícil', d:'Sem ajuda e sem explicação.'}};
+const mode = () => MODES[SET.ctrl] ? SET.ctrl : 'facil';
+const isEasy = () => mode() === 'facil';
+function setMode(m){ SET.ctrl = m; saveSet(); UI.hintHide = null; renderOpts(); renderHUD(); }
+function modePicker(onPick){
+  const box = h('div', {class:'modes', role:'radiogroup', 'aria-label':'Dificuldade dos controles'});
+  const draw = () => box.replaceChildren(...Object.entries(MODES).map(([k, M]) => h('button', {type:'button', role:'radio', 'aria-checked':String(mode() === k), class:'mode ' + k + (mode() === k ? ' on' : ''), onclick:() => { setMode(k); draw(); onPick && onPick(k); }}, h('b', {text:M.n}), h('small', {text:M.d}))));
+  draw(); return box;
+}
 // Inimigo longe: o herói anda até um quadrado de onde consegue atacar e ataca
 function approachAndAttack(u, t){
-  if (isGuest() || G.mode !== 'combat' || u.moveLeft <= 0 || !canUse(u, 'ataque').ok) return false;
+  if (!isEasy() || isGuest() || G.mode !== 'combat' || u.moveLeft <= 0 || !canUse(u, 'ataque').ok) return false;
   const map = bfs(u, u.moveLeft), oc = u.c, or = u.r; let best = null;
   try {
     for (const n of map.values()){
@@ -4067,7 +4087,7 @@ function approachAndAttack(u, t){
 }
 // Fora de combate os outros heróis acompanham quem andou
 async function followLeader(L){
-  if (!SET.follow || online() || G.mode !== 'explore') return;
+  if (!isEasy() || !SET.follow || online() || G.mode !== 'explore') return;
   const others = G.units.filter(x => x.side === 'hero' && x !== L && x.alive && !x.down && dist(x, L) > 2);
   for (const x of others){
     if (G.mode !== 'explore') return;
@@ -4083,7 +4103,7 @@ async function followLeader(L){
 }
 // Sem movimento e sem ação, o turno passa sozinho
 function maybeAutoEnd(){
-  if (!SET.autoEnd || G.mode !== 'combat' || isGuest()) return;
+  if (!isEasy() || !SET.autoEnd || G.mode !== 'combat' || isGuest()) return;
   const u = G.active; if (!u || u.side !== 'hero' || !controllable(u)) return;
   if (u.moveLeft > 0 || !u.acted) return;
   if (!u.bonus && abilityList(u).some(id => actOf(u, id) === 'bonus' && canUse(u, id).ok)) return;
@@ -4155,7 +4175,7 @@ const TUT_STEPS = () => [
   {art:tutDice, eyebrow:'Passo 4 · Dados', title:'O dado de 20 lados', text:'Todo ataque rola um d20 e soma o bônus do herói. Se igualar ou passar a Defesa do alvo, acerta. O jogo rola e mostra tudo na tela.', tips:['20 no dado: crítico, dano em dobro.', '1 no dado: erra sempre.', 'Vantagem: rola dois e fica com o maior.']},
   {art:tutTabs, eyebrow:'Passo 5 · Painel', title:'Ficha, mochila e história', text:'O botão Painel abre a ficha do herói escolhido. Lá ficam a vida (PV), o recurso da classe, as armas e tudo que aconteceu.', tips:['PV em zero: o herói cai. Cure antes disso.', 'Fora do combate, troque armas à vontade.', 'Mascate vende armas e poções. Arsenal mostra as 120 armas.']},
   {art:tutOnline, eyebrow:'Passo 6 · Com amigos', title:'Jogue online', text:'Quer jogar junto? Um vira Mestre e cria a sala. Ele recebe um código de 6 letras. Os outros entram com o código e escolhem um herói.', tips:['Cada um joga do próprio celular ou PC.', 'O Mestre controla os monstros e a mesa.', 'Dá pra voltar depois com o mesmo código.']},
-  {art:tutEmblem, eyebrow:'Pronto', title:'Hora de descer', text:'Explore com calma, junte o grupo antes de lutar e use poções quando a vida ficar vermelha. Dicas aparecem no topo da tela enquanto você joga.', tips:['Esqueceu algo? Botão Tutorial no topo.', 'Dicas podem ser desligadas em Opções.', 'Seu grupo fica salvo neste aparelho.']},
+  {art:tutEmblem, eyebrow:'Pronto', title:'Hora de descer', text:'Explore com calma, junte o grupo antes de lutar e use poções quando a vida ficar vermelha. Dicas aparecem no topo da tela enquanto você joga.', tips:['Modo Fácil ajuda em tudo. Normal e Difícil tiram a ajuda.', 'Esqueceu algo? Botão Tutorial no topo.', 'Seu grupo fica salvo neste aparelho.']},
 ];
 function openTutorial(first){
   const steps = TUT_STEPS(); let i = 0, x0 = null;
@@ -4185,8 +4205,16 @@ function openTutorial(first){
 }
 /* Dica contextual no topo: diz o que fazer agora */
 function hintText(){
-  if (!SET.hints || G.mode === 'setup' || G.mode === 'over') return null;
+  if (!SET.hints || mode() === 'dificil' || G.mode === 'setup' || G.mode === 'over') return null;
   const u = controlledUnit();
+  if (mode() === 'normal'){
+    if (G.mode === 'explore') return G.sel ? {t:'Explore a cripta.', k:'explore'} : {t:`${TAP} num herói.`};
+    const a = G.active; if (G.mode !== 'combat' || !a) return null;
+    if (a.side === 'enemy') return {t:'Vez do inimigo.', cls:'enemy'};
+    if (!u) return {t:`Vez de ${a.name.split(' ')[0]}.`};
+    if (G.aim) return {t:`${TAP} no alvo.`, cls:'aim'};
+    return {t: !u.acted ? 'Sua vez. Ande até o inimigo e ataque.' : u.moveLeft > 0 ? 'Ainda dá pra andar. Depois, Encerrar.' : 'Toque em Encerrar.', cls:'turn'};
+  }
   if (G.mode === 'explore'){
     if (!G.sel) return {t:`${TAP} num herói pra escolher.`};
     return {t:`${TAP} no chão pra andar. O grupo vai junto.`, s:'Inimigos acordam quando vocês chegam perto.', k:'explore'};
@@ -4222,6 +4250,7 @@ function openStart(){
       h('button', {class:'btn big go', type:'button', onclick: () => { audioInit(); closeModal(); G.stash = []; startGame(defaultParty()); }}, h('span', {}, saved ? 'Nova partida' : 'Jogar agora', h('small', {text:'grupo pronto, começa na hora'})), h('b', {class:'arrow', text:'→'})),
       h('button', {class:'btn big', type:'button', onclick:() => openTutorial(true)}, h('span', {}, 'Como jogar', h('small', {text:'tutorial rápido, 2 minutos'})), h('b', {class:'arrow', text:'?'})),
       NET.available ? h('button', {class:'btn big', type:'button', onclick:() => { audioInit(); openOnline(); }}, h('span', {}, 'Jogar com amigos', h('small', {text:'criar ou entrar numa sala'})), h('b', {class:'arrow', text:'⇄'})) : null),
+    h('span', {class:'lbl', text:'Modo'}), modePicker(),
     h('span', {class:'lbl', text:'Para quem já conhece'}),
     h('div', {class:'row start-more'},
       h('button', {class:'btn', type:'button', onclick: () => { audioInit(); openCreator(); }}, 'Criar meu grupo'),
