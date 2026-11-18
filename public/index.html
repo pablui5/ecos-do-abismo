@@ -169,6 +169,8 @@ button{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .ab.end{width:80px;background:linear-gradient(180deg,#2a1f0b,#150f05);border-color:var(--gold-d);color:var(--gold)}
 .ab.end:hover:not(:disabled){border-color:var(--gold);box-shadow:0 0 16px rgba(224,188,114,.3);color:var(--gold)}
 .ab.move.sel{border-color:var(--abyss);color:var(--abyss);box-shadow:0 0 0 1px var(--abyss),0 0 18px rgba(92,198,255,.3)}
+.ab.end.ready{border-color:var(--gold);animation:endPulse 1.4s ease-in-out infinite}
+@keyframes endPulse{0%,100%{box-shadow:0 0 0 1px var(--gold),0 0 8px rgba(224,188,114,.2)}50%{box-shadow:0 0 0 2px var(--gold),0 0 24px rgba(224,188,114,.55)}}
 
 /* ---------- Avisos flutuantes ---------- */
 .tip{position:absolute;z-index:30;pointer-events:none;background:rgba(5,9,18,.95);border:1px solid var(--line2);border-radius:8px;padding:8px 11px;font-size:12px;max-width:280px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--shadow)}
@@ -515,7 +517,7 @@ function doubleDice(expr){ const m = String(expr).match(/^(\d*)d(\d+)(.*)$/); re
 /* =====================================================================
    OPÇÕES (lembradas só neste navegador)
    ===================================================================== */
-const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, cam:'tatica', gmView:false, gmControl:false, light:1 };
+const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, autoEnd:true, follow:true, cam:'tatica', gmView:false, gmControl:false, light:1 };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('ecos.set') || '{}')); } catch(e){}
 function saveSet(){ try { localStorage.setItem('ecos.set', JSON.stringify(SET)); } catch(e){} }
 
@@ -3100,7 +3102,7 @@ function frightBlocks(u, c, r){
   const f = u.conds.amedrontado; if (!f || !f.src || !f.src.alive) return false;
   return dist({c, r}, f.src) < dist(u, f.src);
 }
-async function moveUnit(u, c, r){
+async function moveUnit(u, c, r, noFollow){
   if (isGuest()){ netIntent(u, {k:'move', c, r}); return; }
   const map = bfs(u, G.mode === 'combat' ? u.moveLeft : 40);
   const n = map.get(tileKey(c, r)); if (!n || n.d === 0) return;
@@ -3112,6 +3114,7 @@ async function moveUnit(u, c, r){
   G.busy = false;
   checkTriggers();
   afterAction();
+  if (!noFollow && G.mode === 'explore') await followLeader(u);
 }
 
 /* =====================================================================
@@ -3194,6 +3197,7 @@ function afterAction(){
   if (isHost()) netPartySync();
   if (G.mode === 'combat' && !G.units.some(u => u.side === 'enemy' && u.alive && u.awake)){ endCombat(); return; }
   renderHUD(); updatePreview();
+  maybeAutoEnd();
 }
 function endCombat(){
   G.mode = 'explore'; G.order = []; G.active = null; G.aim = null;
@@ -3419,7 +3423,7 @@ function renderHotbar(){
     b.addEventListener('mouseenter', ev => showAbilityTip(u, id, ev)); b.addEventListener('mouseleave', hideTip);
     el.append(b);
   });
-  if (G.mode === 'combat') el.append(h('button', {class:'ab end', type:'button', disabled:G.busy, onclick: () => { if (!G.busy) endTurn(); }, html:`<span class="key">␣</span>${svgIcon('end')}<span class="an">Encerrar</span>`}));
+  if (G.mode === 'combat') el.append(h('button', {class:'ab end' + (u.acted && (u.moveLeft === 0 || u.bonus) ? ' ready' : ''), type:'button', disabled:G.busy, onclick: () => { if (!G.busy) endTurn(); }, html:`<span class="key">␣</span>${svgIcon('end')}<span class="an">Encerrar</span>`}));
 }
 function showAbilityTip(u, id, ev){
   const ab = abilityInfo(u, id), ok = canUse(u, id), act = actOf(u, id);
@@ -3769,6 +3773,8 @@ function renderOpts(){
     chk('oGrid', 'Grade tática', 'grid', () => { W3.grid.visible = SET.grid; }),
     chk('oHint', 'Dicas para iniciantes no topo da tela', 'hints', () => { UI.hintHide = null; renderHint(); }),
     chk('oBig', 'Texto maior', 'big', applyBig),
+    chk('oAuto', 'Encerrar o turno sozinho quando não sobrar nada', 'autoEnd'),
+    chk('oFollow', 'Grupo segue o herói escolhido fora do combate', 'follow'),
     chk('oSnd', 'Som', 'sound', () => { audioInit(); setSound(SET.sound); }),
     h('span', {class:'lbl', text:'Câmera'}),
     h('div', {class:'row'}, h('button', {class:'btn' + (SET.cam === 'tatica' ? ' gold' : ''), type:'button', onclick: () => setCamMode('tatica')}, 'Visão tática'), h('button', {class:'btn' + (SET.cam === 'proxima' ? ' gold' : ''), type:'button', onclick: () => setCamMode('proxima')}, 'Câmera próxima')),
@@ -3809,6 +3815,11 @@ function pickTile(ev){
   const rect = $('gl').getBoundingClientRect();
   const ndc = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
   const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, camera);
+  try {
+    const roots = G.units.filter(u => u.alive && u.m && u.m.root && u.m.root.visible && !hidden(u)).map(u => u.m.root);
+    const hit = roots.length ? ray.intersectObjects(roots, true).find(x => x.object.type !== 'Sprite') : null;
+    if (hit){ let o = hit.object; while (o && !roots.includes(o)) o = o.parent; const hu = o && G.units.find(u => u.m.root === o); if (hu) return {c:hu.c, r:hu.r}; }
+  } catch(e){}
   const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); const p = new THREE.Vector3();
   if (!ray.ray.intersectPlane(plane, p)) return null;
   const c = Math.round(p.x / T + 6), r = Math.round(p.z / T + 11);
@@ -3922,8 +3933,10 @@ function onTileClick(t){
     if (u && occ.side !== u.side && G.mode === 'combat' && !u.acted){
       const id = u.side === 'enemy' ? 'm_ataque' : validTarget(u, 'ataque', t.c, t.r) && canUse(u, 'ataque').ok ? 'ataque' : u.clsKey === 'mago' && validTarget(u, 'seta', t.c, t.r) ? 'seta' : null;
       if (id){ perform(u, id, t.c, t.r); return; }
-      toast(u.side === 'hero' && !canUse(u, 'ataque').ok ? canUse(u, 'ataque').why : 'Fora de alcance ou sem linha de visão.');
+      if (u.side === 'hero' && approachAndAttack(u, occ)) return;
+      toast(u.side === 'hero' && !canUse(u, 'ataque').ok ? canUse(u, 'ataque').why : u.moveLeft > 0 ? 'Longe demais pra chegar neste turno.' : 'Fora de alcance ou sem linha de visão.');
     }
+    else if (u && occ.side !== u.side && G.mode === 'combat' && u.acted){ toast('Já atacou neste turno. Ande ou toque em Encerrar.'); }
     if (occ.side === 'hero' && G.mode === 'explore' && !occ.down) focusCamera(occ);
     G.sel = occ; UI.editSheet = false; renderHUD(); updatePreview();
     return;
@@ -3942,7 +3955,7 @@ function bindInput(){
   cv.addEventListener('pointermove', e => {
     if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     if (pinch0 && pointers.size === 2){ const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); CAM.wantRad = clamp(pinch0.rad * pinch0.d / Math.max(20, d), 6, 40); return; }
-    if (down){ const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 6) down.moved = true; if (down.moved){ CAM.az = down.az - dx * .006; CAM.wantPol = clamp(down.pol - dy * .004, .2, 1.35); hideTip(); return; } }
+    if (down){ const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > (e.pointerType === 'touch' ? 16 : 6)) down.moved = true; if (down.moved){ CAM.az = down.az - dx * .006; CAM.wantPol = clamp(down.pol - dy * .004, .2, 1.35); hideTip(); return; } }
     if (!camera) return;
     const t = pickTile(e), prev = G.hover; G.hover = t;
     if (!t){ hideTip(); if (prev) updatePreview(); return; }
@@ -4030,6 +4043,60 @@ function openStatus(){
     h('button', {class:'btn go', type:'button', onclick:closeModal}, 'Voltar ao jogo')), true);
 }
 /* =====================================================================
+   CONTROLES FÁCEIS: tocar no inimigo ataca, grupo segue, turno acaba sozinho
+   ===================================================================== */
+// Inimigo longe: o herói anda até um quadrado de onde consegue atacar e ataca
+function approachAndAttack(u, t){
+  if (isGuest() || G.mode !== 'combat' || u.moveLeft <= 0 || !canUse(u, 'ataque').ok) return false;
+  const map = bfs(u, u.moveLeft), oc = u.c, or = u.r; let best = null;
+  try {
+    for (const n of map.values()){
+      if (n.d === 0 || unitAt(n.c, n.r)) continue;
+      if (frightBlocks && frightBlocks(u, n.c, n.r)) continue;
+      u.c = n.c; u.r = n.r; const ok = validTarget(u, 'ataque', t.c, t.r); u.c = oc; u.r = or;
+      if (ok && (!best || n.d < best.d)) best = n;
+    }
+  } finally { u.c = oc; u.r = or; }
+  if (!best) return false;
+  (async () => {
+    await moveUnit(u, best.c, best.r);
+    await waitFor(() => !G.busy);
+    if (G.mode === 'combat' && G.active === u && u.alive && !u.down && !u.acted && t.alive && validTarget(u, 'ataque', t.c, t.r) && canUse(u, 'ataque').ok) await perform(u, 'ataque', t.c, t.r);
+  })();
+  return true;
+}
+// Fora de combate os outros heróis acompanham quem andou
+async function followLeader(L){
+  if (!SET.follow || online() || G.mode !== 'explore') return;
+  const others = G.units.filter(x => x.side === 'hero' && x !== L && x.alive && !x.down && dist(x, L) > 2);
+  for (const x of others){
+    if (G.mode !== 'explore') return;
+    const map = bfs(x, 40); let best = null;
+    for (const n of map.values()){
+      if (n.d === 0 || unitAt(n.c, n.r)) continue;
+      const dl = dist(n, L); if (dl < 1 || dl > 2) continue;
+      if (!best || dl < dist(best, L) || (dl === dist(best, L) && n.d < best.d)) best = n;
+    }
+    if (best) await moveUnit(x, best.c, best.r, true);
+  }
+  if (G.sel !== L){ G.sel = L; renderHUD(); }
+}
+// Sem movimento e sem ação, o turno passa sozinho
+function maybeAutoEnd(){
+  if (!SET.autoEnd || G.mode !== 'combat' || isGuest()) return;
+  const u = G.active; if (!u || u.side !== 'hero' || !controllable(u)) return;
+  if (u.moveLeft > 0 || !u.acted) return;
+  if (!u.bonus && abilityList(u).some(id => actOf(u, id) === 'bonus' && canUse(u, id).ok)) return;
+  const stamp = G.round + ':' + G.turnIdx; let tries = 0;
+  const tryEnd = () => {
+    if (G.mode !== 'combat' || G.active !== u || G.round + ':' + G.turnIdx !== stamp || G.ending) return;
+    if ((G.busy || G.aim) && tries++ < 12){ setTimeout(tryEnd, 300); return; }
+    if (G.busy || G.aim) return;
+    toast(`${u.name.split(' ')[0]} fez tudo. Próximo!`); endTurn();
+  };
+  setTimeout(tryEnd, 1000);
+}
+/* =====================================================================
    TUTORIAL E DICAS PARA INICIANTES
    ===================================================================== */
 const TOUCH = matchMedia('(pointer:coarse)').matches;
@@ -4082,9 +4149,9 @@ function tutOnline(){
 }
 const TUT_STEPS = () => [
   {art:tutEmblem, eyebrow:'Bem-vindo', title:'Ecos do Abismo', text:'Um RPG de mesa no navegador. Você comanda três heróis numa cripta escura. A meta: atravessar a ponte sobre o abismo e chegar ao santuário vivo.', tips:['Não precisa saber nada de RPG.', 'O jogo faz todas as contas pra você.', 'Leva uns 2 minutos pra aprender.']},
-  {art:tutGrid, eyebrow:'Passo 1 · Andar', title:'Herói e quadrados azuis', text:`${TAP} num herói pra escolher. Os quadrados azuis mostram onde ele pode ir. ${TAP} num deles pra andar.`, tips: TOUCH ? ['Arraste com um dedo pra girar a câmera.', 'Pinça com dois dedos pra aproximar.', 'Os nomes no topo também escolhem o herói.'] : ['Arraste o mouse pra girar a câmera.', 'Roda do mouse aproxima. WASD desliza.', 'Botão direito cancela o que estiver mirando.']},
-  {art:tutChips, eyebrow:'Passo 2 · Turnos', title:'Cada um na sua vez', text:'Quando um inimigo vê vocês, começa o combate. A fila no topo mostra de quem é a vez. A carta com brilho dourado é quem joga agora.', tips:['No seu turno: andar + 1 ação + 1 ação bônus.', 'A reação é automática: golpe em quem foge de perto.', 'Inimigos jogam sozinhos. É só esperar.']},
-  {art:tutHotbar, eyebrow:'Passo 3 · Agir', title:'Habilidades embaixo', text:`A barra de baixo tem tudo que o herói sabe fazer. ${TAP} numa habilidade e depois ${tap} no alvo destacado. Quando terminar, ${tap} em Encerrar.`, tips:['Botão apagado = não dá agora (falta recurso ou alcance).', 'Número no canto = custo. Número grande = recarga.', TOUCH ? 'Ao escolher, a dica no topo explica a habilidade.' : 'Passe o mouse em cima pra ver o que faz. Teclas 1 a 9 também funcionam.']},
+  {art:tutGrid, eyebrow:'Passo 1 · Andar', title:'Toque no chão pra andar', text:`${TAP} num quadrado e o herói vai até lá. Fora do combate, o grupo todo acompanha. No combate, os quadrados azuis mostram até onde ele chega.`, tips: TOUCH ? ['Arraste com um dedo pra girar a câmera.', 'Pinça com dois dedos pra aproximar.', 'Os nomes no topo escolhem outro herói.'] : ['Arraste o mouse pra girar a câmera.', 'Roda do mouse aproxima. WASD desliza.', 'Botão direito cancela o que estiver mirando.']},
+  {art:tutChips, eyebrow:'Passo 2 · Turnos', title:'Cada um na sua vez', text:'Quando um inimigo vê vocês, começa o combate. A fila no topo mostra de quem é a vez. A carta com brilho dourado é quem joga agora.', tips:['No seu turno: andar e atacar. Pronto.', 'A reação é automática: golpe em quem foge de perto.', 'Inimigos jogam sozinhos. É só esperar.']},
+  {art:tutHotbar, eyebrow:'Passo 3 · Atacar', title:'Toque no inimigo', text:`O jeito mais fácil: ${tap} no inimigo. Se ele estiver longe, o herói anda até ele e ataca sozinho. Quando não sobra nada pra fazer, o turno passa sozinho.`, tips:[`Golpes especiais ficam na barra de baixo: ${tap} num e depois no alvo.`, 'Botão apagado = não dá agora (falta recurso ou alcance).', TOUCH ? 'Ao escolher, a dica no topo explica o golpe.' : 'Passe o mouse em cima pra ver o que faz. Teclas 1 a 9 também.']},
   {art:tutDice, eyebrow:'Passo 4 · Dados', title:'O dado de 20 lados', text:'Todo ataque rola um d20 e soma o bônus do herói. Se igualar ou passar a Defesa do alvo, acerta. O jogo rola e mostra tudo na tela.', tips:['20 no dado: crítico, dano em dobro.', '1 no dado: erra sempre.', 'Vantagem: rola dois e fica com o maior.']},
   {art:tutTabs, eyebrow:'Passo 5 · Painel', title:'Ficha, mochila e história', text:'O botão Painel abre a ficha do herói escolhido. Lá ficam a vida (PV), o recurso da classe, as armas e tudo que aconteceu.', tips:['PV em zero: o herói cai. Cure antes disso.', 'Fora do combate, troque armas à vontade.', 'Mascate vende armas e poções. Arsenal mostra as 120 armas.']},
   {art:tutOnline, eyebrow:'Passo 6 · Com amigos', title:'Jogue online', text:'Quer jogar junto? Um vira Mestre e cria a sala. Ele recebe um código de 6 letras. Os outros entram com o código e escolhem um herói.', tips:['Cada um joga do próprio celular ou PC.', 'O Mestre controla os monstros e a mesa.', 'Dá pra voltar depois com o mesmo código.']},
@@ -4122,7 +4189,7 @@ function hintText(){
   const u = controlledUnit();
   if (G.mode === 'explore'){
     if (!G.sel) return {t:`${TAP} num herói pra escolher.`};
-    return {t:`${TAP} num quadrado pra ${G.sel.name.split(' ')[0]} andar. Inimigos acordam quando vocês chegam perto.`, k:'explore'};
+    return {t:`${TAP} no chão pra andar. O grupo vai junto.`, s:'Inimigos acordam quando vocês chegam perto.', k:'explore'};
   }
   if (G.mode === 'combat'){
     const a = G.active; if (!a) return null;
@@ -4131,7 +4198,7 @@ function hintText(){
     if (G.aim){ const ab = abilityInfo(u, G.aim); const tg = ABILITIES[G.aim].target; return {t:`${ab.name}: ${ab.desc}`, s: tg === 'self' ? `${TAP} de novo pra confirmar.` : tg === 'ally' ? `${TAP} num aliado.` : `${TAP} num alvo destacado. Mover cancela.`, cls:'aim'}; }
     const left = [u.moveLeft > 0 ? 'andar' : null, !u.acted ? '1 ação' : null, !u.bonus ? '1 ação bônus' : null].filter(Boolean);
     const list = left.length > 1 ? left.slice(0, -1).join(', ') + ' e ' + left[left.length - 1] : left[0];
-    return left.length ? {t:`Sua vez, ${u.name.split(' ')[0]}! Ainda dá: ${list}.`, s:`Quando terminar, ${tap} em Encerrar.`, cls:'turn'} : {t:`${u.name.split(' ')[0]} já fez tudo.`, s:`${TAP} em Encerrar pra passar a vez.`, cls:'turn'};
+    return left.length ? {t:`Sua vez, ${u.name.split(' ')[0]}! Ainda dá: ${list}.`, s: !u.acted ? `${TAP} num inimigo pra atacar: o herói chega perto sozinho.` : `Quando terminar, ${tap} em Encerrar.`, cls:'turn'} : {t:`${u.name.split(' ')[0]} já fez tudo.`, s:`${TAP} em Encerrar pra passar a vez.`, cls:'turn'};
   }
   return null;
 }
