@@ -47,6 +47,7 @@ No plano gratuito, o serviço adormece quando ninguém usa e leva uns 30 segundo
 
 **Pronto:**
 - cripta, ponte e santuário em 3D;
+- caverna com paredes rochosas contínuas, estalactites, umidade e enquadramento que oculta a parede diante da câmera;
 - 3 classes, 4 tipos de inimigo e um chefe;
 - regras de dados, ação bônus e reação, cobertura e condições;
 - 120 armas em 12 famílias, com modelos 3D gerados por código;
