@@ -87,7 +87,7 @@ button{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .side{position:absolute;z-index:8;right:max(12px,env(safe-area-inset-right,0px));top:calc(128px + env(safe-area-inset-top,0px));bottom:calc(var(--hb-h) + 22px + env(safe-area-inset-bottom,0px));width:var(--side-w);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);animation:rise .22s ease-out}
 /* Com o painel aberto, barra de habilidades, rolagem e iniciativa ficam no espaço livre à esquerda */
 @media (min-width:821px){
-  #app:has(.side:not([hidden])) .hotbar,#app:has(.side:not([hidden])) .rollpop,#app:has(.side:not([hidden])) .init{left:calc((100vw - var(--side-w) - 24px) / 2);max-width:calc(100vw - var(--side-w) - 48px)}
+  #app:has(.side:not([hidden])) .hotbar,#app:has(.side:not([hidden])) .rollpop,#app:has(.side:not([hidden])) .init,#app:has(.side:not([hidden])) .hint{left:calc((100vw - var(--side-w) - 24px) / 2);max-width:calc(100vw - var(--side-w) - 48px)}
 }
 .side::before,.drawer::before,.modal::before{content:"";position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(224,188,114,.55),transparent);pointer-events:none}
 .tabs{display:flex;gap:4px;padding:6px;border-bottom:1px solid var(--line);background:rgba(4,8,16,.45)}
@@ -182,7 +182,7 @@ button{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .rollpop .d20 b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-size:15px;padding-top:2px}
 .rollpop .txt{font-size:13px;min-width:0}
 .rollpop .txt small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
-.toast{position:absolute;left:50%;top:calc(132px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:rgba(5,9,18,.95);border:1px solid var(--abyss-d);border-radius:999px;padding:9px 18px;font-size:14px;z-index:40;max-width:min(90vw,520px);text-align:center;pointer-events:none;box-shadow:0 0 24px rgba(92,198,255,.15),var(--shadow);animation:pop .2s ease-out}
+.toast{position:absolute;left:50%;top:calc(196px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:rgba(5,9,18,.95);border:1px solid var(--abyss-d);border-radius:999px;padding:9px 18px;font-size:14px;z-index:40;max-width:min(90vw,520px);text-align:center;pointer-events:none;box-shadow:0 0 24px rgba(92,198,255,.15),var(--shadow);animation:pop .2s ease-out}
 
 /* ---------- Gaveta (Mestre, Opções, Online) ---------- */
 .drawer{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(60px + env(safe-area-inset-top,0px));width:330px;max-height:calc(100% - 80px - var(--hb-h) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;background:linear-gradient(180deg,rgba(14,22,38,.97),rgba(6,10,19,.98));border:1px solid var(--line2);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:11px;z-index:20;box-shadow:var(--shadow);animation:rise .2s ease-out;overscroll-behavior:contain}
@@ -260,6 +260,68 @@ optgroup,option{background:#0f1a2d}
 .ok{color:#8fe0a6}.pend{color:var(--fire)}
 .nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
 
+/* ---------- Dica contextual ---------- */
+.hint{position:absolute;z-index:15;left:50%;transform:translateX(-50%);top:calc(138px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;width:max-content;max-width:min(560px,calc(100vw - 24px));background:linear-gradient(180deg,rgba(14,32,52,.94),rgba(6,14,26,.95));border:1px solid var(--abyss-d);border-radius:12px;padding:8px 8px 8px 10px;font-size:14px;box-shadow:0 0 20px rgba(92,198,255,.12),var(--shadow);backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);animation:pop .2s ease-out}
+.hint-i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--abyss);color:#04101d;font-weight:700;font-size:14px}
+.hint-t{min-width:0;line-height:1.35}
+.hint-t small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.hint-x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1}
+.hint-x:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+.hint.turn{border-color:var(--gold-d);background:linear-gradient(180deg,rgba(46,34,12,.94),rgba(18,13,5,.95))}
+.hint.turn .hint-i{background:var(--gold)}
+.hint.aim .hint-i{background:var(--gold)}
+.hint.enemy{border-color:#5f241c;background:linear-gradient(180deg,rgba(44,14,12,.92),rgba(16,6,6,.94))}
+.hint.enemy .hint-i{background:var(--blood);color:#fff}
+
+/* ---------- Tela inicial ---------- */
+.start-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.btn.big{min-height:64px;padding:12px 16px;font-size:17px;font-weight:500;border-radius:11px}
+.btn.big span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.btn.big small{font-family:var(--f-body);font-size:12.5px;font-weight:400;color:var(--muted)}
+.btn.big.go small{color:#a9cce9}.btn.big.gold small{color:#c9ab70}
+.btn.big .arrow{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);font-size:16px;transition:transform .15s}
+.btn.big:hover .arrow{transform:translateX(3px)}
+.start-more .btn{flex:1 1 auto;justify-content:center}
+
+/* ---------- Tutorial ---------- */
+.modal.tut{max-width:620px;gap:12px;touch-action:pan-y}
+.tut-skip{position:absolute;top:14px;right:14px;background:none;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:6px 10px;border-radius:8px;z-index:2}
+.tut-skip:hover{color:var(--fg);background:rgba(255,255,255,.05)}
+.tut-art{height:170px;border-radius:12px;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 60%,#13305a 0%,#081227 55%,#04080f 100%);display:grid;place-items:center;overflow:hidden;margin-top:14px;box-shadow:inset 0 0 50px rgba(0,0,0,.55)}
+.tut-svg{width:100%;height:100%;max-width:420px}
+.tut-mock{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;max-width:100%}
+.tut-row{display:flex;gap:7px;justify-content:center;flex-wrap:nowrap;max-width:100%;overflow:hidden}
+.tut-row .chip{cursor:default;animation:none}
+.tut-row .chip.act{animation:glow 2s ease-in-out infinite}
+.tut-row .ab{cursor:default}
+.tut-pips,.tut-legend{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--soft);font-family:var(--f-mono)}
+.tut-pips b{color:var(--gold);font-weight:400}
+.tut-legend span{display:flex;align-items:center;gap:5px}
+.tut-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.lg-blue{background:var(--abyss)}.lg-gold{background:var(--gold)}
+.lg-cost{color:var(--abyss);font-weight:400}
+.tut-tabs{display:flex;gap:4px;padding:4px;border-radius:8px;background:rgba(4,8,16,.6);border:1px solid var(--line);font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tut-tabs span{padding:6px 9px;border-radius:5px}
+.tut-tabs .on{color:var(--fg);background:var(--panel3);box-shadow:inset 0 -2px 0 var(--abyss)}
+.tut-bars{width:min(300px,80vw)}
+.tut-bars .barrow span{color:var(--muted)}
+.tut-code{font-family:var(--f-mono);font-size:34px;letter-spacing:.3em;padding:8px 18px 8px 26px;border-radius:10px;border:1px dashed var(--gold-d);color:var(--gold);background:rgba(20,14,4,.6)}
+.tut-body{display:flex;flex-direction:column;gap:8px}
+.modal.tut h1{font-size:clamp(28px,4.5vw,40px)}
+.tut-tips{margin:2px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.tut-tips li{position:relative;padding:8px 10px 8px 32px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:14px;color:var(--soft)}
+.tut-tips li::before{content:"";position:absolute;left:12px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--abyss);box-shadow:0 0 8px var(--abyss)}
+.tut-dots{display:flex;gap:7px;justify-content:center;padding:2px 0}
+.tut-dot{width:9px;height:9px;padding:0;border-radius:999px;border:0;background:var(--line2);cursor:pointer;transition:width .2s,background .2s}
+.tut-dot.on{width:26px;background:var(--gold)}
+.tut-nav{justify-content:space-between}
+.tut-nav .btn{flex:1 1 0;justify-content:center;min-height:46px;font-size:15.5px}
+
+/* Texto maior */
+body.big .pane,body.big .modal,body.big .hint,body.big .tip{zoom:1.15}
+body.big .drawer>*{zoom:1.1}
+body.big .hotbar .an{font-size:11px}
+
 /* ---------- Animações ---------- */
 @keyframes rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
 @keyframes pop{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
@@ -270,6 +332,7 @@ optgroup,option{background:#0f1a2d}
 
 /* ---------- Telas médias ---------- */
 @media (max-width:1100px){.tbtn{padding:6px 10px;font-size:12.5px}}
+@media (min-width:821px) and (max-width:1320px){.tools{flex-wrap:nowrap;overflow-x:auto;max-width:calc(100vw - 300px);padding:2px 0 4px;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}.tools::-webkit-scrollbar{display:none}.tbtn{flex:none}}
 @media (max-width:760px){.create{grid-template-columns:minmax(0,1fr)}.preview{min-height:250px}}
 @media (max-width:640px){.status{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
@@ -302,7 +365,12 @@ optgroup,option{background:#0f1a2d}
   .ab .key{display:none}
   .ab.end{width:66px}
   .rollpop{bottom:calc(var(--hb-h) + 18px + env(safe-area-inset-bottom,0px));padding:8px 12px}
-  .toast{top:calc(150px + env(safe-area-inset-top,0px));border-radius:12px}
+  .toast{top:calc(214px + env(safe-area-inset-top,0px));border-radius:12px}
+  .hint{top:calc(150px + env(safe-area-inset-top,0px));font-size:13.5px}
+  .start-main{grid-template-columns:minmax(0,1fr)}
+  .btn.big{min-height:60px}
+  .tut-art{height:150px;margin-top:22px}
+  .tut-tips li{font-size:13.5px}
   .drawer{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;top:calc(96px + env(safe-area-inset-top,0px));max-height:calc(100% - 96px - var(--hb-h) - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border-radius:16px;padding:14px}
   .overlay{padding:max(10px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
   .modal{padding:20px 16px;gap:13px;border-radius:14px}
@@ -346,7 +414,10 @@ optgroup,option{background:#0f1a2d}
   .ab .key{display:none}
   .ab .an{font-size:9px}
   .drawer{left:auto;right:max(8px,env(safe-area-inset-right,0px));width:min(340px,48vw);top:calc(48px + env(safe-area-inset-top,0px));max-height:calc(100% - 60px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
-  .toast{top:calc(90px + env(safe-area-inset-top,0px))}
+  .toast{top:calc(140px + env(safe-area-inset-top,0px))}
+  .hint{top:calc(96px + env(safe-area-inset-top,0px));font-size:13px;padding:5px 6px 5px 8px}
+  #app:has(.side:not([hidden])) .hint{left:calc((100vw - var(--side-w) - 16px) / 2);max-width:calc(100vw - var(--side-w) - 32px)}
+  .tut-art{height:110px}
 }
 
 /* Toque: alvos maiores, sem efeitos de passar o mouse */
@@ -374,6 +445,7 @@ optgroup,option{background:#0f1a2d}
       <button class="tbtn" id="btnArsenal" type="button">Arsenal</button>
       <button class="tbtn" id="btnShop" type="button">Mascate</button>
       <button class="tbtn" id="btnOpts" type="button">Opções</button>
+      <button class="tbtn" id="btnTut" type="button">Tutorial</button>
       <button class="tbtn" id="btnRules" type="button">Regras</button>
       <button class="tbtn" id="btnStatus" type="button">O que já funciona</button>
     </nav>
@@ -392,6 +464,7 @@ optgroup,option{background:#0f1a2d}
   <div class="rollpop" id="rollpop" hidden></div>
   <div class="tip" id="tip" hidden></div>
   <div class="banner" id="banner" hidden></div>
+  <div class="hint" id="hint" hidden></div>
   <div class="toast" id="toast" hidden></div>
   <div class="drawer" id="drawer" hidden></div>
 </div>
@@ -442,7 +515,7 @@ function doubleDice(expr){ const m = String(expr).match(/^(\d*)d(\d+)(.*)$/); re
 /* =====================================================================
    OPÇÕES (lembradas só neste navegador)
    ===================================================================== */
-const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, cam:'tatica', gmView:false, gmControl:false, light:1 };
+const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, cam:'tatica', gmView:false, gmControl:false, light:1 };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('ecos.set') || '{}')); } catch(e){}
 function saveSet(){ try { localStorage.setItem('ecos.set', JSON.stringify(SET)); } catch(e){} }
 
@@ -3324,6 +3397,7 @@ function econ(u){
   return `${pip(!u.acted, 'ação')}  ${pip(!u.bonus, 'bônus')}  ${pip(!u.reactUsed && !hasCond(u, 'lento'), 'reação')}  · mov. ${u.moveLeft}/${u.speed}`;
 }
 function renderHotbar(){
+  queueMicrotask(renderHint);
   const el = $('hotbar'); el.replaceChildren();
   const u = controlledUnit();
   if (!u || G.mode === 'setup' || G.mode === 'over'){
@@ -3693,6 +3767,8 @@ function renderOpts(){
     chk('oRed', 'Efeitos reduzidos (menos partículas e tremores)', 'reduced'),
     chk('oBase', 'Base de miniatura sob os personagens', 'base', () => G.units.forEach(u => { if (u.m.base){ u.m.base.visible = SET.base; u.m.lift = SET.base ? .09 : 0; u.bar.s.position.y = u.m.height + .45 + u.m.lift; } })),
     chk('oGrid', 'Grade tática', 'grid', () => { W3.grid.visible = SET.grid; }),
+    chk('oHint', 'Dicas para iniciantes no topo da tela', 'hints', () => { UI.hintHide = null; renderHint(); }),
+    chk('oBig', 'Texto maior', 'big', applyBig),
     chk('oSnd', 'Som', 'sound', () => { audioInit(); setSound(SET.sound); }),
     h('span', {class:'lbl', text:'Câmera'}),
     h('div', {class:'row'}, h('button', {class:'btn' + (SET.cam === 'tatica' ? ' gold' : ''), type:'button', onclick: () => setCamMode('tatica')}, 'Visão tática'), h('button', {class:'btn' + (SET.cam === 'proxima' ? ' gold' : ''), type:'button', onclick: () => setCamMode('proxima')}, 'Câmera próxima')),
@@ -3896,6 +3972,7 @@ function bindInput(){
   $('btnGM').addEventListener('click', () => openDrawer('gm'));
   $('btnOpts').addEventListener('click', () => openDrawer('opts'));
   $('btnRules').addEventListener('click', openRules);
+  $('btnTut').addEventListener('click', () => openTutorial(false));
   $('btnStatus').addEventListener('click', openStatus);
   $('btnArsenal').addEventListener('click', openArsenal);
   $('btnShop').addEventListener('click', () => openShop());
@@ -3952,19 +4029,137 @@ function openStatus(){
         'Modelos esculpidos no nível das miniaturas de referência dependem de arquivos 3D (.glb) externos; os atuais são gerados por código'])) ),
     h('button', {class:'btn go', type:'button', onclick:closeModal}, 'Voltar ao jogo')), true);
 }
+/* =====================================================================
+   TUTORIAL E DICAS PARA INICIANTES
+   ===================================================================== */
+const TOUCH = matchMedia('(pointer:coarse)').matches;
+const TAP = TOUCH ? 'Toque' : 'Clique', tap = TOUCH ? 'toque' : 'clique';
+function tutGrid(){
+  // tabuleiro: herói, quadrados azuis de movimento e um inimigo
+  let s = '<svg viewBox="0 0 280 150" class="tut-svg" aria-hidden="true"><defs><radialGradient id="tg" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#5cc6ff" stop-opacity=".55"/><stop offset="1" stop-color="#5cc6ff" stop-opacity=".18"/></radialGradient></defs>';
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 9; x++){
+    const d = Math.abs(x - 2) + Math.abs(y - 2), mv = d > 0 && d <= 2;
+    s += `<rect x="${14 + x*28}" y="${4 + y*28}" width="26" height="26" rx="3" fill="${mv ? 'url(#tg)' : '#0d1626'}" stroke="${mv ? '#5cc6ff' : '#22344f'}" stroke-opacity="${mv ? .8 : 1}"/>`;
+  }
+  s += '<circle cx="83" cy="73" r="10" fill="#6fd08c"/><circle cx="83" cy="73" r="15" fill="none" stroke="#e0bc72" stroke-width="2.5"><animate attributeName="r" values="13;16;13" dur="1.8s" repeatCount="indefinite"/></circle>';
+  s += '<circle cx="223" cy="45" r="10" fill="#e2523f"/><text x="223" y="49" font-size="11" text-anchor="middle" fill="#fff" font-family="monospace">!</text>';
+  s += '<path d="M139 73 l-4 16 5-4 4 8 4-2-4-8 7-1z" fill="#fff" stroke="#04070f" stroke-width="1.2"><animateTransform attributeName="transform" type="translate" values="0 0;-2 -2;0 0" dur="1.2s" repeatCount="indefinite"/></path>';
+  return s + '</svg>';
+}
+function tutDice(){
+  return `<svg viewBox="0 0 280 150" class="tut-svg" aria-hidden="true">
+    <g transform="translate(70 75)"><polygon points="0,-50 43,-25 43,25 0,50 -43,25 -43,-25" fill="#14223a" stroke="#e0bc72" stroke-width="2.5"/><polygon points="0,-30 26,15 -26,15" fill="none" stroke="#e0bc72" stroke-opacity=".5"/><text y="9" font-size="26" text-anchor="middle" fill="#f6ecd2" font-family="monospace">15</text></g>
+    <text x="133" y="70" font-size="22" text-anchor="middle" fill="#8a9bb2" font-family="monospace">+2</text>
+    <text x="133" y="98" font-size="11" text-anchor="middle" fill="#8a9bb2" font-family="monospace">bônus</text>
+    <text x="165" y="82" font-size="24" text-anchor="middle" fill="#8a9bb2">=</text>
+    <text x="198" y="86" font-size="28" text-anchor="middle" fill="#6fd08c" font-family="monospace">17</text>
+    <path d="M240 45 l24 8 v20 c0 16-12 24-24 30 c-12-6-24-14-24-30 v-20z" fill="#101b2f" stroke="#5cc6ff" stroke-width="2"/><text x="240" y="83" font-size="16" text-anchor="middle" fill="#bfe6ff" font-family="monospace">13</text>
+    <text x="240" y="125" font-size="10" text-anchor="middle" fill="#8a9bb2" font-family="monospace">DEFESA</text>
+    <text x="198" y="125" font-size="10" text-anchor="middle" fill="#6fd08c" font-family="monospace">ACERTOU</text></svg>`;
+}
+function tutEmblem(){
+  return `<svg viewBox="0 0 280 150" class="tut-svg" aria-hidden="true"><defs><linearGradient id="te" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6ecd2"/><stop offset="1" stop-color="#9c7a3c"/></linearGradient></defs>
+    <path d="M60 140 L140 20 L220 140" fill="none" stroke="#22344f" stroke-width="2"/><path d="M20 112 h240" stroke="#5cc6ff" stroke-opacity=".35" stroke-dasharray="4 6"/>
+    <g transform="translate(140 72)"><polygon points="0,-46 40,-23 40,23 0,46 -40,23 -40,-23" fill="#0b1424" stroke="url(#te)" stroke-width="3"/><text y="10" font-size="28" text-anchor="middle" fill="url(#te)" font-family="Georgia,serif" font-weight="700">20</text></g>
+    <circle cx="70" cy="40" r="2" fill="#5cc6ff"><animate attributeName="opacity" values="1;.2;1" dur="2s" repeatCount="indefinite"/></circle><circle cx="215" cy="55" r="2" fill="#e0bc72"><animate attributeName="opacity" values=".2;1;.2" dur="2.4s" repeatCount="indefinite"/></circle><circle cx="240" cy="30" r="1.6" fill="#5cc6ff"><animate attributeName="opacity" values="1;.3;1" dur="1.7s" repeatCount="indefinite"/></circle></svg>`;
+}
+function tutChips(){
+  const chip = (n, side, act, f) => `<span class="chip ${side}${act ? ' act' : ''}"><span class="cn">${n}</span><span class="ci">${side === 'hero' ? 'herói' : 'inimigo'}</span><span class="mini"><i style="width:${f}%"></i></span></span>`;
+  return `<div class="tut-mock"><div class="tut-row">${chip('Kael', 'hero', true, 90)}${chip('Esqueleto', 'enemy', false, 70)}${chip('Lyra', 'hero', false, 60)}</div>
+    <div class="tut-pips"><span><b>●</b> Movimento</span><span><b>●</b> 1 ação</span><span><b>●</b> 1 ação bônus</span><span><b>●</b> 1 reação</span></div></div>`;
+}
+function tutHotbar(){
+  const ab = (ic, n, cls, extra) => `<span class="ab${cls ? ' ' + cls : ''}">${extra || ''}${svgIcon(ic)}<span class="an">${n}</span></span>`;
+  return `<div class="tut-mock"><div class="tut-row">${ab('boot', 'Mover', 'move')}${ab('sword', 'Atacar', 'sel')}${ab('spin', 'Giro', '', '<span class="cost">2</span>')}${ab('potion', 'Poção')}${ab('end', 'Encerrar', 'end')}</div>
+    <div class="tut-legend"><span><i class="lg-blue"></i>mover</span><span><i class="lg-gold"></i>escolhida</span><span><b class="lg-cost">2</b>custo</span></div></div>`;
+}
+function tutTabs(){
+  return `<div class="tut-mock"><div class="tut-tabs"><span class="on">Ficha</span><span>Inventário</span><span>Crônica</span><span>Dados</span></div>
+    <div class="tut-bars"><div class="barrow"><b>PV</b><div class="bar"><i style="width:75%"></i></div><span>vida</span></div><div class="barrow"><b>Recurso</b><div class="bar res"><i style="width:55%"></i></div><span>energia</span></div><div class="barrow"><b>XP</b><div class="bar xp"><i style="width:35%"></i></div><span>nível</span></div></div></div>`;
+}
+function tutOnline(){
+  return `<div class="tut-mock"><div class="tut-code">ABC123</div><div class="tut-pips"><span><b>♛</b> Mestre cria a sala</span><span><b>➜</b> amigos entram com o código</span></div></div>`;
+}
+const TUT_STEPS = () => [
+  {art:tutEmblem, eyebrow:'Bem-vindo', title:'Ecos do Abismo', text:'Um RPG de mesa no navegador. Você comanda três heróis numa cripta escura. A meta: atravessar a ponte sobre o abismo e chegar ao santuário vivo.', tips:['Não precisa saber nada de RPG.', 'O jogo faz todas as contas pra você.', 'Leva uns 2 minutos pra aprender.']},
+  {art:tutGrid, eyebrow:'Passo 1 · Andar', title:'Herói e quadrados azuis', text:`${TAP} num herói pra escolher. Os quadrados azuis mostram onde ele pode ir. ${TAP} num deles pra andar.`, tips: TOUCH ? ['Arraste com um dedo pra girar a câmera.', 'Pinça com dois dedos pra aproximar.', 'Os nomes no topo também escolhem o herói.'] : ['Arraste o mouse pra girar a câmera.', 'Roda do mouse aproxima. WASD desliza.', 'Botão direito cancela o que estiver mirando.']},
+  {art:tutChips, eyebrow:'Passo 2 · Turnos', title:'Cada um na sua vez', text:'Quando um inimigo vê vocês, começa o combate. A fila no topo mostra de quem é a vez. A carta com brilho dourado é quem joga agora.', tips:['No seu turno: andar + 1 ação + 1 ação bônus.', 'A reação é automática: golpe em quem foge de perto.', 'Inimigos jogam sozinhos. É só esperar.']},
+  {art:tutHotbar, eyebrow:'Passo 3 · Agir', title:'Habilidades embaixo', text:`A barra de baixo tem tudo que o herói sabe fazer. ${TAP} numa habilidade e depois ${tap} no alvo destacado. Quando terminar, ${tap} em Encerrar.`, tips:['Botão apagado = não dá agora (falta recurso ou alcance).', 'Número no canto = custo. Número grande = recarga.', TOUCH ? 'Ao escolher, a dica no topo explica a habilidade.' : 'Passe o mouse em cima pra ver o que faz. Teclas 1 a 9 também funcionam.']},
+  {art:tutDice, eyebrow:'Passo 4 · Dados', title:'O dado de 20 lados', text:'Todo ataque rola um d20 e soma o bônus do herói. Se igualar ou passar a Defesa do alvo, acerta. O jogo rola e mostra tudo na tela.', tips:['20 no dado: crítico, dano em dobro.', '1 no dado: erra sempre.', 'Vantagem: rola dois e fica com o maior.']},
+  {art:tutTabs, eyebrow:'Passo 5 · Painel', title:'Ficha, mochila e história', text:'O botão Painel abre a ficha do herói escolhido. Lá ficam a vida (PV), o recurso da classe, as armas e tudo que aconteceu.', tips:['PV em zero: o herói cai. Cure antes disso.', 'Fora do combate, troque armas à vontade.', 'Mascate vende armas e poções. Arsenal mostra as 120 armas.']},
+  {art:tutOnline, eyebrow:'Passo 6 · Com amigos', title:'Jogue online', text:'Quer jogar junto? Um vira Mestre e cria a sala. Ele recebe um código de 6 letras. Os outros entram com o código e escolhem um herói.', tips:['Cada um joga do próprio celular ou PC.', 'O Mestre controla os monstros e a mesa.', 'Dá pra voltar depois com o mesmo código.']},
+  {art:tutEmblem, eyebrow:'Pronto', title:'Hora de descer', text:'Explore com calma, junte o grupo antes de lutar e use poções quando a vida ficar vermelha. Dicas aparecem no topo da tela enquanto você joga.', tips:['Esqueceu algo? Botão Tutorial no topo.', 'Dicas podem ser desligadas em Opções.', 'Seu grupo fica salvo neste aparelho.']},
+];
+function openTutorial(first){
+  const steps = TUT_STEPS(); let i = 0, x0 = null;
+  const finish = () => { SET.tutSeen = true; saveSet(); if (first || G.mode === 'setup') openStart(); else closeModal(); };
+  openModal(md => {
+    md.classList.add('tut');
+    const art = h('div', {class:'tut-art'}), eb = h('span', {class:'eyebrow'}), tt = h('h1', {}), tx = h('p', {class:'lead'}), tl = h('ul', {class:'tut-tips'});
+    const dots = h('div', {class:'tut-dots', role:'tablist'}), back = h('button', {class:'btn', type:'button'}, 'Voltar'), next = h('button', {class:'btn go', type:'button'});
+    const skip = h('button', {class:'tut-skip', type:'button', onclick:finish}, 'Pular');
+    const draw = () => {
+      const S = steps[i]; const a = S.art(); art.innerHTML = a; art.classList.toggle('mock', !a.startsWith('<svg'));
+      eb.textContent = S.eyebrow; tt.textContent = S.title; tx.textContent = S.text;
+      tl.replaceChildren(...S.tips.map(t => h('li', {text:t})));
+      dots.replaceChildren(...steps.map((_, k) => h('button', {type:'button', class:'tut-dot' + (k === i ? ' on' : ''), 'aria-label':`Passo ${k + 1}`, onclick:() => { i = k; draw(); }})));
+      back.disabled = i === 0; next.textContent = i === steps.length - 1 ? 'Começar a jogar' : 'Próximo';
+      skip.hidden = i === steps.length - 1;
+      md.querySelector('.tut-body')?.animate?.([{opacity:0, transform:'translateX(10px)'}, {opacity:1, transform:'none'}], {duration:220, easing:'ease-out'});
+    };
+    back.onclick = () => { if (i > 0){ i--; draw(); } };
+    next.onclick = () => { if (i < steps.length - 1){ i++; draw(); } else finish(); };
+    md.addEventListener('keydown', e => { if (e.key === 'ArrowRight'){ next.click(); e.preventDefault(); } else if (e.key === 'ArrowLeft'){ back.click(); e.preventDefault(); } });
+    md.addEventListener('pointerdown', e => { x0 = e.clientX; });
+    md.addEventListener('pointerup', e => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 60){ (dx < 0 ? next : back).click(); } });
+    md.append(skip, art, h('div', {class:'tut-body'}, eb, tt, tx, tl), dots, h('div', {class:'row tut-nav'}, back, next));
+    draw(); setTimeout(() => next.focus(), 0);
+  });
+}
+/* Dica contextual no topo: diz o que fazer agora */
+function hintText(){
+  if (!SET.hints || G.mode === 'setup' || G.mode === 'over') return null;
+  const u = controlledUnit();
+  if (G.mode === 'explore'){
+    if (!G.sel) return {t:`${TAP} num herói pra escolher.`};
+    return {t:`${TAP} num quadrado pra ${G.sel.name.split(' ')[0]} andar. Inimigos acordam quando vocês chegam perto.`, k:'explore'};
+  }
+  if (G.mode === 'combat'){
+    const a = G.active; if (!a) return null;
+    if (a.side === 'enemy') return {t:`Vez de ${a.name}. Aguarde.`, cls:'enemy'};
+    if (!u) return {t:`Vez de ${a.name}. Aguarde o jogador dele.`};
+    if (G.aim){ const ab = abilityInfo(u, G.aim); const tg = ABILITIES[G.aim].target; return {t:`${ab.name}: ${ab.desc}`, s: tg === 'self' ? `${TAP} de novo pra confirmar.` : tg === 'ally' ? `${TAP} num aliado.` : `${TAP} num alvo destacado. Mover cancela.`, cls:'aim'}; }
+    const left = [u.moveLeft > 0 ? 'andar' : null, !u.acted ? '1 ação' : null, !u.bonus ? '1 ação bônus' : null].filter(Boolean);
+    const list = left.length > 1 ? left.slice(0, -1).join(', ') + ' e ' + left[left.length - 1] : left[0];
+    return left.length ? {t:`Sua vez, ${u.name.split(' ')[0]}! Ainda dá: ${list}.`, s:`Quando terminar, ${tap} em Encerrar.`, cls:'turn'} : {t:`${u.name.split(' ')[0]} já fez tudo.`, s:`${TAP} em Encerrar pra passar a vez.`, cls:'turn'};
+  }
+  return null;
+}
+function renderHint(){
+  const el = $('hint'); if (!el) return;
+  const H = hintText();
+  if (!H || (H.k && UI.hintHide === H.k)){ el.hidden = true; return; }
+  el.className = 'hint' + (H.cls ? ' ' + H.cls : '');
+  el.replaceChildren(h('span', {class:'hint-i', text:'?'}), h('span', {class:'hint-t'}, H.t, H.s ? h('small', {text:H.s}) : null),
+    h('button', {class:'hint-x', type:'button', 'aria-label':'Esconder dica', text:'×', onclick:() => { if (H.k) UI.hintHide = H.k; else { SET.hints = false; saveSet(); toast('Dicas desligadas. Religue em Opções.'); } renderHint(); }}));
+  el.hidden = false;
+}
+function applyBig(){ document.body.classList.toggle('big', !!SET.big); }
 function openStart(){
   const saved = loadParty();
   openModal(md => md.append(
-    h('span', {class:'eyebrow', text:'Demonstração jogável'}), h('h1', {text:'Ecos do Abismo'}),
+    h('span', {class:'eyebrow', text:'RPG de mesa no navegador'}), h('h1', {text:'Ecos do Abismo'}),
     h('p', {class:'lead', text:'Sob a abadia esquecida, uma cripta termina numa ponte sobre o nada. Do outro lado, um santuário coberto de névoa chama por quem desce. Três heróis atendem o chamado.'}),
-    h('p', {class:'note', text:'Clique num herói e depois num quadrado para andar. Em combate, cada um tem movimento, uma ação, uma ação bônus e uma reação. O som começa quando você entrar.'}),
-    h('div', {class:'row'},
-      NET.available ? h('button', {class:'btn gold', type:'button', onclick:() => { audioInit(); openOnline(); }}, 'Jogar online', h('small', {text:'criar ou entrar numa sala'})) : null,
-      saved ? h('button', {class:'btn gold', type:'button', onclick:() => { audioInit(); closeModal(); G.stash = saved.stash || []; startGame(null, saved.heroes); }}, 'Continuar grupo salvo', h('small', {text:saved.heroes.map(x => x.def.name.split(' ')[0]).join(', ')})) : null,
-      h('button', {class:'btn go', type:'button', onclick: () => { audioInit(); openCreator(); }}, 'Criar o grupo', h('small', {text:'atributos, maestrias, armas e aparência'})),
-      h('button', {class:'btn', type:'button', onclick: () => { audioInit(); closeModal(); G.stash = []; startGame(defaultParty()); }}, 'Descer com o grupo pronto'),
-      h('button', {class:'btn', type:'button', onclick:openArsenal}, 'Ver o arsenal'),
-      h('button', {class:'btn', type:'button', onclick:openRules}, 'Regras'))));
+    h('div', {class:'start-main'},
+      saved ? h('button', {class:'btn big gold', type:'button', onclick:() => { audioInit(); closeModal(); G.stash = saved.stash || []; startGame(null, saved.heroes); }}, h('span', {}, 'Continuar', h('small', {text:saved.heroes.map(x => x.def.name.split(' ')[0]).join(', ')})), h('b', {class:'arrow', text:'→'})) : null,
+      h('button', {class:'btn big go', type:'button', onclick: () => { audioInit(); closeModal(); G.stash = []; startGame(defaultParty()); }}, h('span', {}, saved ? 'Nova partida' : 'Jogar agora', h('small', {text:'grupo pronto, começa na hora'})), h('b', {class:'arrow', text:'→'})),
+      h('button', {class:'btn big', type:'button', onclick:() => openTutorial(true)}, h('span', {}, 'Como jogar', h('small', {text:'tutorial rápido, 2 minutos'})), h('b', {class:'arrow', text:'?'})),
+      NET.available ? h('button', {class:'btn big', type:'button', onclick:() => { audioInit(); openOnline(); }}, h('span', {}, 'Jogar com amigos', h('small', {text:'criar ou entrar numa sala'})), h('b', {class:'arrow', text:'⇄'})) : null),
+    h('span', {class:'lbl', text:'Para quem já conhece'}),
+    h('div', {class:'row start-more'},
+      h('button', {class:'btn', type:'button', onclick: () => { audioInit(); openCreator(); }}, 'Criar meu grupo'),
+      h('button', {class:'btn', type:'button', onclick:openArsenal}, 'Arsenal'),
+      h('button', {class:'btn', type:'button', onclick:openRules}, 'Regras completas'))));
 }
 const SKINS = [0xf1c9a5, 0xd9a27a, 0xa8714d, 0x6b4630, 0x8fa37a, 0xa7b4c4];
 const COLORS = [0x7a1f1f, 0x2b4a8a, 0xc9b27a, 0x2f5d3a, 0x4a2f6b, 0x2a2a2e, 0x8a5a2b, 0xd8d2c4];
@@ -4464,7 +4659,8 @@ function boot(){
   setCamMode(SET.cam);
   renderHUD();
   requestAnimationFrame(loop);
-  netCheck().finally(openStart);
+  applyBig();
+  netCheck().finally(() => SET.tutSeen ? openStart() : openTutorial(true));
   if (location.hostname === 'localhost') window.__ecos = {NET, netJoin, netCreate, applySnap, G, perform, endTurn, startGame, defaultParty, closeModal, revealSanctum, moveUnit, unitAt, SET, abilityList, canUse, validTarget, equip, WEAPONS, WEAPON_LIST, buildWeapon, attackProfile, openArsenal, openShop, get renderer(){ return renderer; }, get scene(){ return scene; }, get camera(){ return camera; }};
 }
 boot();
