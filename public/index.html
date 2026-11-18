@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="direction-rules.js"></script>
 <script src="campaign.js"></script>
+<script src="cavern.js"></script>
 <style>
 /* Layout: o mundo 3D ocupa a tela; HUD sobreposto — iniciativa no topo, ficha/crônica/dados à direita, barra de habilidades embaixo. */
 :root{
@@ -858,14 +859,12 @@ function flame(x, y, z, scale=1){
 }
 function buildWorld(){
   if(G.scenario!=='cripta')buildAlternateWorld();else{
-  const stoneTop = new THREE.MeshStandardMaterial({map:toTex(TX.floor, [11,7]), emissiveMap:toTex(TX.floorE, [11,7]), emissive:0x6fd0ff, emissiveIntensity:.9, roughness:.85, color:0xb8c4d6});
+  const stoneTop = new THREE.MeshStandardMaterial({map:toTex(TX.floor, [11,7]), emissiveMap:toTex(TX.floorE, [11,7]), emissive:0x6c948b, emissiveIntensity:.12, roughness:.64, color:0xb5ad95});
   const rockMat = std(0x51627c, {map:TX.rock, roughness:.95, flatShading:true});
   const wallTex = TX.wall.clone(); wallTex.needsUpdate = true; wallTex.repeat.set(4, 2);
 
   // --- Cripta ---
   const cryptFloor = mk(new THREE.PlaneGeometry(16.5, 10.5), stoneTop, 0, 0, 10.5, false); cryptFloor.rotation.x = -Math.PI/2; cryptFloor.receiveShadow = true; scene.add(cryptFloor);
-  scene.add(mk(box(17.4, 3, 11.4), rockMat, 0, -1.52, 10.5));
-  const under = mk(new THREE.ConeGeometry(9, 22, 7), rockMat, 0, -14, 10.5); under.rotation.y = .3; under.scale.z = .7; scene.add(under);
   const makeWall = (w, hh, d, x, z, ry, normal) => {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry;
     const mat = std(0x6c7a92, {map:wallTex, roughness:.92, transparent:true, opacity:1});
@@ -924,7 +923,7 @@ function buildWorld(){
   scene.add(sarc);
 
   // --- Ponte ---
-  const bridgeTop = new THREE.MeshStandardMaterial({map:toTex(TX.floor, [3,8]), emissiveMap:toTex(TX.floorE, [3,8]), emissive:0x6fd0ff, emissiveIntensity:1.1, roughness:.85, color:0xa9b6c9});
+  const bridgeTop = new THREE.MeshStandardMaterial({map:toTex(TX.floor, [3,8]), emissiveMap:toTex(TX.floorE, [3,8]), emissive:0x6c948b, emissiveIntensity:.18, roughness:.68, color:0xb2afa1});
   const bridgeSide = std(0x435069, {map:TX.rock, roughness:.95});
   const deck = new THREE.Mesh(box(4.5, .6, 12), [bridgeSide, bridgeSide, bridgeTop, bridgeSide, bridgeSide, bridgeSide]); deck.position.set(0, -.3, -.75); deck.receiveShadow = true; deck.castShadow = true; scene.add(deck);
   for (const z of [-4.5, 2.5]){ scene.add(mk(box(1.6, 36, 1.6), bridgeSide, 0, -18.6, z)); }
@@ -937,7 +936,7 @@ function buildWorld(){
       const z = -6.75 + i * 1.5;
       scene.add(mk(cyl(.1, .13, 1.15, 8), railMat, x, .55, z));
       scene.add(mk(new THREE.ConeGeometry(.12, .45, 8), railMat, x, 1.35, z));
-      scene.add(mk(sph(.07, 8, 6), std(0x6fd0ff, {emissive:0x4fc3ff, emissiveIntensity:1.6}), x, 1.12, z, false));
+      scene.add(mk(sph(.07, 8, 6), std(0x9bac9e, {emissive:0x4c8077, emissiveIntensity:.45}), x, 1.12, z, false));
     }
   }
   // --- Santuário ---
@@ -956,43 +955,18 @@ function buildWorld(){
   W3.mist = mk(new THREE.CylinderGeometry(7.9, 7.9, 9, 40), new THREE.MeshBasicMaterial({color:0x020610, transparent:true, opacity:.94, depthWrite:false}), 0, 3.6, -12, false);
   scene.add(W3.mist);
 
-  // --- Abismo ---
-  const nRocks = SET.quality === 'baixa' ? 40 : 80;
-  for (let i = 0; i < nRocks; i++){
-    const side = i % 2 ? 1 : -1;
-    const x = side * (11 + Math.random()*12), y = -32 + Math.random()*44, z = -32 + Math.random()*52;
-    if (Math.abs(x) < 10 && z > 4) continue;
-    const r = 2.5 + Math.random()*5;
-    const m = mk(new THREE.DodecahedronGeometry(r, 0), rockMat, x, y, z, false);
-    m.scale.set(1 + Math.random()*.6, 1.4 + Math.random()*1.4, 1 + Math.random()*.6); m.rotation.set(Math.random(), Math.random()*3, Math.random()*.4);
-    m.receiveShadow = true; scene.add(m);
+  // --- Gruta natural: geologia agrupada e passagem tática livre ---
+  W3.cavern=window.EcosCavern.build({THREE,scene,rockTexture:TX.rock,glowTexture:TX.glow});
+  W3.walls.push(...W3.cavern.walls);
+  for(const [x,z] of [[-12,-19],[13,-6]]){
+    const shaft=mk(new THREE.CylinderGeometry(.5,1.7,35,12,1,true),new THREE.MeshBasicMaterial({map:TX.shaft,color:0x8ba7b0,transparent:true,opacity:.045,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}),x,5,z,false);
+    shaft.rotation.z=x<0?.18:-.18;scene.add(shaft);W3.shafts.push(shaft);
   }
-  for (let i = 0; i < 14; i++){ const m = mk(new THREE.DodecahedronGeometry(4 + Math.random()*5, 0), rockMat, -20 + Math.random()*40, -28 + Math.random()*40, -30 - Math.random()*8, false); m.scale.y = 1.8; scene.add(m); }
-  const crystalMat = new THREE.MeshStandardMaterial({color:0x9fe4ff, emissive:0x37b6ff, emissiveIntensity:1.4, roughness:.15, metalness:.1, transparent:true, opacity:.9});
-  const crystal = (x, y, z, s) => { const g = new THREE.Group(); g.position.set(x, y, z); for (let k = 0; k < 4; k++){ const c = mk(new THREE.OctahedronGeometry(.25*s, 0), crystalMat, (Math.random()-.5)*.5*s, .2*s, (Math.random()-.5)*.5*s, false); c.scale.y = 2.5 + Math.random()*2; c.rotation.set((Math.random()-.5)*.6, Math.random()*3, (Math.random()-.5)*.6); g.add(c); } scene.add(g); W3.crystals.push(g); };
-  for (const [x, y, z, s] of [[-6.6,0,-15.5,1.2],[6.4,0,-15,1.1],[-9.6,0,6,1.5],[9.8,.4,4.5,1.4],[-11,2,-6,2],[11.5,-1,-9,2],[-12,-3,-18,2.5],[12,1,-20,2.2]]) crystal(x, y, z, s);
-  const islandMat = std(0x51627c, {map:TX.rock, flatShading:true, roughness:.95});
-  const leafMat = std(0x6aa86a, {emissive:0x16351c, emissiveIntensity:.6, flatShading:true});
-  for (const [x, y, z, s] of [[-10, 6, -14, 1.3], [9.5, 8, -17, 1.6], [12, 4, -6, 1], [-12.5, 9, -24, 1.8], [7, 12, -26, 1.4]]){
-    const g = new THREE.Group(); g.position.set(x, y, z);
-    const top = mk(new THREE.CylinderGeometry(1.4*s, 1.1*s, .5*s, 7), islandMat, 0, 0, 0, false); g.add(top);
-    const bot = mk(new THREE.ConeGeometry(1.1*s, 2.4*s, 7), islandMat, 0, -1.45*s, 0, false); bot.rotation.x = Math.PI; g.add(bot);
-    g.add(mk(cyl(.08*s, .12*s, 1.1*s, 6), std(0x4a3524), 0, .8*s, 0, false));
-    const canopy = mk(new THREE.IcosahedronGeometry(.75*s, 0), leafMat, 0, 1.5*s, 0, false); canopy.scale.y = .6; g.add(canopy);
-    g.userData.base = y; g.userData.ph = Math.random()*6;
-    scene.add(g); W3.islands.push(g);
-  }
-  for (let i = 0; i < 6; i++){
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(1 + Math.random(), 3 + Math.random()*2, 60, 16, 1, true), new THREE.MeshBasicMaterial({map:TX.shaft, color:0x9ad8ff, transparent:true, opacity:.09, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide}));
-    m.position.set(-16 + i*6.5 + (Math.random()-.5)*3, 6, -26 + Math.random()*20); m.rotation.z = .22 + (Math.random()-.5)*.1; m.rotation.x = (Math.random()-.5)*.2;
-    scene.add(m); W3.shafts.push(m);
-  }
-  const bottom = mk(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({color:0x0c3a66}), 0, -48, 0, false); bottom.rotation.x = -Math.PI/2; scene.add(bottom);
-  const mg = new THREE.BufferGeometry(); const mp = new Float32Array(500*3);
-  for (let i = 0; i < 500; i++){ mp[i*3] = (Math.random()-.5)*44; mp[i*3+1] = -14 + Math.random()*30; mp[i*3+2] = -30 + Math.random()*50; }
-  mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
-  W3.motes = new THREE.Points(mg, new THREE.PointsMaterial({map:TX.glow, color:0x8fd6ff, size:.22, transparent:true, opacity:.7, blending:THREE.AdditiveBlending, depthWrite:false}));
-  scene.add(W3.motes);
+  const bottom=mk(new THREE.PlaneGeometry(160,160),new THREE.MeshBasicMaterial({color:0x080e14}),0,-42,0,false);bottom.rotation.x=-Math.PI/2;scene.add(bottom);
+  const mg=new THREE.BufferGeometry(),mp=new Float32Array(220*3);
+  for(let i=0;i<220;i++){mp[i*3]=Math.sin(i*2.399)*18;mp[i*3+1]=-12+(i%31)*.7;mp[i*3+2]=-28+(i%53);}
+  mg.setAttribute('position',new THREE.BufferAttribute(mp,3));
+  W3.motes=new THREE.Points(mg,new THREE.PointsMaterial({map:TX.glow,color:0x9faeb2,size:.09,transparent:true,opacity:.26,depthWrite:false}));scene.add(W3.motes);
 
   }
   // grade tática
@@ -1038,6 +1012,7 @@ function applyQuality(){
   W3.torchLights.forEach((L, i) => { L.visible = q === 'alta' || i % 2 === 0; });
   W3.shafts.forEach(s => s.visible = q !== 'baixa');
   if (W3.motes) W3.motes.visible = q !== 'baixa';
+  if(W3.cavern)W3.cavern.details.visible=q!=='baixa';
   W3.grid.visible = SET.grid;
   scene.traverse(o => { if (o.material){ (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); } });
   applyLight();
@@ -1046,6 +1021,8 @@ function applyQuality(){
 }
 function applyLight(){
   const k = clamp(Number(SET.light)||1,.65,1.8);
+  const cave=G.scenario==='cripta';
+  W3.hemi.color.setHex(cave?0x9baeb0:0x8fb6ff);W3.amb.color.setHex(cave?0x2d2c28:0x1d2b45);W3.moon.color.setHex(cave?0xb6c3c4:0xa8ccff);
   W3.hemi.intensity = .7 * k; W3.amb.intensity = .55 * k; W3.moon.intensity = 1.05 * k;
   W3.torchLights.forEach(L => L.userData.base = 1.6 * Math.max(.5, k));
 }
@@ -1724,7 +1701,7 @@ function updateFx(dt, t){ for (let i = FX.length - 1; i >= 0; i--){ if (FX[i](dt
 let shake = 0;
 function camShake(s){ if (!SET.reduced && SET.cameraShake) shake = Math.max(shake, s); }
 function glowSprite(color, size){ const s = new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow, color, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true})); s.scale.set(size, size, 1); return s; }
-function disposeObj(o){ scene.remove(o); o.traverse(m => { if (m.geometry) m.geometry.dispose(); if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(mm => {if(!mm.userData?.shared)mm.dispose();}); }); }
+function disposeObj(o){ scene.remove(o); o.traverse(m => { if(m.isInstancedMesh)m.dispose?.();if (m.geometry) m.geometry.dispose(); if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(mm => {if(!mm.userData?.shared)mm.dispose();}); }); }
 function unitPos(u, y=1){ return new THREE.Vector3(u.wx, (y === 'chest' ? (u.m.height*.62) : y) , u.wz); }
 function handPos(u){
   const J = u.m.J; const v = new THREE.Vector3();
@@ -3108,7 +3085,7 @@ function updateCamera(dt){
   for (const w of W3.walls){
     const toCam = new THREE.Vector3().subVectors(camera.position, w.position); toCam.y = 0;
     const n = w.userData.normal; const behind = toCam.dot(n) < 0;
-    const want = behind ? .16 : 1;
+    const want = behind ? (w.userData.fadeOpacity??.16) : 1;
     for (const m of w.userData.mats){ m.opacity += (want - m.opacity) * k * 2; m.depthWrite = m.opacity > .9; }
   }
 }
@@ -4505,6 +4482,7 @@ function spatialDread(kind){
 function directionFrame(dt,t){
   if (document.hidden) return;
   DIRECTOR.elapsed+=dt;
+  for(const ring of W3.cavern?.ripples||[]){const q=SET.reduced ? .35 : (t*.22+ring.userData.phase)%1;ring.scale.setScalar(.3+q*2.8);ring.material.opacity=SET.reduced ? .08 : .14*Math.sin(q*Math.PI);}
   const now=DIRECTOR.elapsed, quiet=G.mode==='setup'||G.mode==='combat'||now<DIRECTOR.quiet;
   if(AU.dreadGain) AU.dreadGain.gain.setTargetAtTime(quiet||SET.horror===0?0:.035,AU.ctx.currentTime,.8);
   if(AU.windGain) AU.windGain.gain.setTargetAtTime(quiet||SET.horror===0?0:.025,AU.ctx.currentTime,1);
@@ -4637,7 +4615,7 @@ renderSheet=function(pane){renderSheetBase(pane);const u=G.sel||G.active;if(u?.s
 const QUEST=window.EcosCampaign;
 let campaign=QUEST.initial();
 const REGIONS={
- cripta:{name:'Cripta do Selo',color:0x0b1a33,foes:[['esqueleto',3,15],['esqueleto',10,15],['aranha',6,15],['lobisomem',6,11],['aranha',5,9],['arauto',6,2],['esqueleto',4,3],['esqueleto',8,3]]},
+ cripta:{name:'Cripta do Selo',color:0x111b22,foes:[['esqueleto',3,15],['esqueleto',10,15],['aranha',6,15],['lobisomem',6,11],['aranha',5,9],['arauto',6,2],['esqueleto',4,3],['esqueleto',8,3]]},
  vila:{name:'Vilarejo de Valdenegro',color:0x18232b,obstacles:[[2,18],[10,18],[3,14],[9,14],[2,10],[10,10],[4,4],[8,4]],foes:[['esqueleto',3,12],['esqueleto',9,12],['aranha',6,11],['esqueleto',6,4]]},
  floresta:{name:'Floresta dos Enforcados',color:0x13251f,obstacles:[[2,19],[9,19],[4,16],[8,15],[2,13],[10,11],[4,10],[8,7],[2,4],[10,3]],foes:[['aranha',6,15],['aranha',3,12],['lobisomem',8,11],['lobisomem',6,4]]},
  castelo:{name:'Castelo da Última Vigília',color:0x202232,obstacles:[[3,19],[9,19],[3,15],[9,15],[3,11],[9,11],[4,5],[8,5]],foes:[['esqueleto',4,15],['esqueleto',8,15],['lobisomem',6,11],['esqueleto',4,3],['esqueleto',8,3]]}
@@ -4696,6 +4674,7 @@ function rebuildRegion(key){
  for(const node of W3.worldNodes||[])node.traverse(o=>{for(const mat of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean))for(const value of Object.values(mat))if(value?.isTexture&&!sharedTextures.has(value))retiredTextures.add(value);});
  for(const node of W3.worldNodes||[])disposeObj(node);
  for(const texture of retiredTextures)texture.dispose();
+ W3.cavern=null;
  for(const field of ['walls','torches','torchLights','highlights','shafts','islands','crystals'])W3[field]=[];
  W3.motes=null;W3.hlUsed=0;DIRECTOR.fog=[];DIRECTOR.silhouettes=[];
  MAP=regionMap(key);G.scenario=key;
