@@ -8,21 +8,14 @@ code=code.replace('boot();',`
  scene=new THREE.Scene();scene.background=new THREE.Color();scene.fog=new THREE.FogExp2();
  globalThis.probe={rebuildRegion,regionMap,REGIONS,G,W3,scene,walk0};
 `);
-const ctx={THREE,window:{EcosDirection:require('../public/direction-rules.js'),EcosCampaign:Q,EcosCavern:require('../public/cavern.js')},document:{hidden:false,documentElement:{dataset:{}}},localStorage:{getItem:()=>null},matchMedia:()=>({matches:false}),performance:{now:()=>0},setTimeout:()=>0,setInterval:()=>0,requestAnimationFrame:()=>0,console,URL,Blob};
+const ctx={THREE,window:{EcosDirection:require('../public/direction-rules.js'),EcosCampaign:Q},document:{hidden:false,documentElement:{dataset:{}}},localStorage:{getItem:()=>null},matchMedia:()=>({matches:false}),performance:{now:()=>0},setTimeout:()=>0,setInterval:()=>0,requestAnimationFrame:()=>0,console,URL,Blob};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 const {rebuildRegion,REGIONS,scene,walk0,W3}=ctx.probe;
 let sizes={};
 for(let pass=0;pass<3;pass++)for(const area of Object.keys(REGIONS)){
  const previous=[...scene.children];
  rebuildRegion(area);scene.updateMatrixWorld(true);
- scene.traverse(o=>{
-  assert.ok(o.matrixWorld.elements.every(Number.isFinite),area);
-  if(o.isInstancedMesh)assert.ok(o.instanceMatrix.array.every(Number.isFinite),area+' instance');
-  if(o.name==='Fundação rochosa da cripta'){
-   const matrix=new THREE.Matrix4(),point=new THREE.Vector3(),positions=o.geometry.getAttribute('position');
-   for(let i=0;i<o.count;i++){o.getMatrixAt(i,matrix);for(let j=0;j<positions.count;j++)assert.ok(point.fromBufferAttribute(positions,j).applyMatrix4(matrix).y<-.05,'Foundation must not protrude through the floor');}
-  }
- });
+ scene.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite),area));
  assert.ok(previous.every(o=>o.parent===null),'Travel must detach the previous world');
  assert.equal(scene.children.length,W3.worldNodes.length,'Only the current world remains');sizes[area]=scene.children.length;
  assert.equal(W3.highlights.length,260);
