@@ -62,15 +62,16 @@ originais. Alterar tensão não restaura a opção de armas de artífice por aci
 - Receber a imagem de referência e produzir modelos finais com anatomia, rosto
   expressivo, cabelo, materiais PBR, desgaste e rig de produção. Não há `.glb`
   final nem importador de modelos finais nesta entrega.
-- Criar os vilarejos, florestas deformadas e castelos em ruínas; o mapa continua
-  sendo a cripta, ponte e santuário da demonstração.
+- Refinar artisticamente os novos cenários procedurais de vilarejo, floresta e
+  castelo. A campanha jogável está descrita em [MISSOES.md](MISSOES.md).
 - Produzir monstros originais finais, IA de perseguição/emboscada mais completa e
   reações físicas à luz. A ambientação atual não equivale a esses modelos finais.
 - Implementar as 21 classes que faltam e definir suas referências visuais. O
   repositório possui apenas Guerreiro, Mago e Paladino; não foram inventadas
   classes substitutas nem cadastradas opções sem regras funcionais.
 - Animação facial, corrida, esquiva dedicada, canalização sustentada, interação
-  com objetos, IK de pés em terreno irregular e revisão de clipping de cada arma.
+  detalhada com objetos, IK de pés em terreno irregular e revisão de clipping de cada arma.
+  Há agora uma pose animada de interação usada nos objetivos da campanha.
   A passada e a mão de apoio melhoradas não encerram essas pendências.
 - Cadeia completa de LOD, orçamento de texturas/memória e medição de FPS em
   dispositivos de referência. Não foi fixada uma meta de hardware sem requisitos.
@@ -90,7 +91,7 @@ endereço CDN que já consta em `public/index.html`, como arquivo local `.cjs`:
 node tests/model-smoke.cjs /caminho/three-r128.cjs
 ```
 
-O teste percorre 3 protagonistas × 120 armas × 10 estados de animação, verifica
+O teste percorre 3 protagonistas × 120 armas × 11 estados de animação, verifica
 transformações finitas e distância entre mão de apoio e ponto do cabo. É uma
 verificação de geometria, não comprovação de anatomia, expressividade ou ausência
 de clipping. A captura visual e a revisão humana continuam necessárias.

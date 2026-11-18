@@ -53,10 +53,12 @@ No plano gratuito, o serviço adormece quando ninguém usa e leva uns 30 segundo
 - maestrias, inventário com dois conjuntos, mascate, baú e trocas;
 - dados com expressões e rolagens secretas;
 - salas online com banco de dados.
+- diário compartilhado, missão principal de cinco etapas, três secundárias e três finais;
+- vilarejo, floresta e castelo procedurais, com viagens conduzidas pelo Mestre.
 
 **Próximas etapas:**
 - as outras 21 classes, com especializações, e o editor de classes;
-- a campanha com 10 missões;
+- ampliar a campanha para 10 missões;
 - simulações de equilíbrio.
 
 Modelos 3D esculpidos dependem de arquivos `.glb` externos.
@@ -64,3 +66,5 @@ Modelos 3D esculpidos dependem de arquivos `.glb` externos.
 ## Direção de terror e protagonistas
 
 A implementação parcial da direção 16 está descrita em [docs/DIRECAO-16.md](docs/DIRECAO-16.md), com recursos, regras de tensão, testes e pendências de produção 3D. Os modelos procedurais **não são protagonistas finalizados**.
+
+Para começar **O Selo dos Nomes**, crie/carregue o grupo e abra **Missões → Iniciar missão principal**. Objetivos, recompensas, viagens, finais e regras de salvamento estão em [docs/MISSOES.md](docs/MISSOES.md).

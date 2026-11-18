@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="direction-rules.js"></script>
+<script src="campaign.js"></script>
 <style>
 /* Layout: o mundo 3D ocupa a tela; HUD sobreposto — iniciativa no topo, ficha/crônica/dados à direita, barra de habilidades embaixo. */
 :root{
@@ -145,6 +146,7 @@ optgroup{background:#0f1a2d}
 .overlay{position:fixed;inset:0;z-index:50;background:rgba(2,5,10,.78);display:grid;place-items:center;padding:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(14px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));overflow-y:auto}
 .modal{background:#08101e;border:1px solid var(--line);border-radius:10px;width:100%;max-width:640px;padding:22px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box;box-shadow:0 30px 90px rgba(0,0,0,.7)}
 .modal.wide{max-width:1040px}
+.modal.mission-book{min-width:0;max-width:min(1040px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow-y:auto;overflow-wrap:anywhere}
 .modal h1{margin:0;font-family:var(--f-display);font-size:clamp(32px,5vw,50px);line-height:1;font-weight:700;text-wrap:balance}
 .eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--abyss)}
 .lead{margin:0;font-size:17px;color:#c9d6e4;max-width:62ch}
@@ -203,6 +205,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     <nav class="tools" id="tools">
       <button class="tbtn" id="btnNet" type="button">Online</button>
       <button class="tbtn" id="btnSide" type="button">Painel</button>
+      <button class="tbtn" id="btnMissions" type="button">Missões</button>
       <button class="tbtn" id="btnGM" type="button">Mestre</button>
       <button class="tbtn" id="btnArsenal" type="button">Arsenal</button>
       <button class="tbtn" id="btnShop" type="button">Mascate</button>
@@ -622,7 +625,7 @@ const MONSTERS = {
 };
 
 /* Mapa: c = cripta, = = ponte, B = santuário do chefe, P = pilar (bloqueia passagem e visão), espaço = abismo */
-const MAP = [
+let MAP = [
   '    BBBBB    ',
   '   BBBBBBB   ',
   '  BBBBBBBBB  ',
@@ -828,8 +831,7 @@ function init3D(){
   Object.assign(W3.moon.shadow.camera, {left:-20, right:20, top:20, bottom:-20, near:1, far:80});
   W3.moon.shadow.bias = -.0005;
   for (let i = 0; i < 3; i++){ const L = new THREE.PointLight(0xffffff, 0, 10, 2); scene.add(L); W3.fxLights.push({L, until:0, from:0, dur:1}); }
-  buildWorld();
-  applyQuality();
+  rebuildRegion('cripta');
   return true;
 }
 function fxLight(pos, color, intensity, dist, dur){
@@ -855,6 +857,7 @@ function flame(x, y, z, scale=1){
   return g;
 }
 function buildWorld(){
+  if(G.scenario!=='cripta')buildAlternateWorld();else{
   const stoneTop = new THREE.MeshStandardMaterial({map:toTex(TX.floor, [11,7]), emissiveMap:toTex(TX.floorE, [11,7]), emissive:0x6fd0ff, emissiveIntensity:.9, roughness:.85, color:0xb8c4d6});
   const rockMat = std(0x51627c, {map:TX.rock, roughness:.95, flatShading:true});
   const wallTex = TX.wall.clone(); wallTex.needsUpdate = true; wallTex.repeat.set(4, 2);
@@ -991,6 +994,7 @@ function buildWorld(){
   W3.motes = new THREE.Points(mg, new THREE.PointsMaterial({map:TX.glow, color:0x8fd6ff, size:.22, transparent:true, opacity:.7, blending:THREE.AdditiveBlending, depthWrite:false}));
   scene.add(W3.motes);
 
+  }
   // grade tática
   const pts = [];
   for (let r = 0; r < GH; r++) for (let c = 0; c < GW; c++){
@@ -1519,7 +1523,7 @@ function addBase(model, colorHex){
 }
 
 /* Poses e animações: repouso, andar, ataque, giro, conjuração, defesa, beber, dano, morte. */
-const ANIM_DUR = {attack:.75, spin:.85, cast:.95, guard:.7, drink:.9, hit:.42, death:1.2, rise:.9, roar:1.0, thrust:.7, shoot:.85, throw:.75, punch:.5, swap:.5};
+const ANIM_DUR = {interact:1.1,attack:.75, spin:.85, cast:.95, guard:.7, drink:.9, hit:.42, death:1.2, rise:.9, roar:1.0, thrust:.7, shoot:.85, throw:.75, punch:.5, swap:.5};
 const ANIM_IMPACT = {attack:.36, spin:.45, cast:.5, guard:.4, drink:.5, roar:.4, thrust:.44, shoot:.5, throw:.5, punch:.28, swap:.3};
 function setAnim(u, name){ u.anim = {name, t:0}; u.animSeq = (u.animSeq || 0) + 1; }
 function playAnim(u, name){
@@ -1591,6 +1595,7 @@ function animateUnit(u, dt, t){
       if (p > .5){ const r = ease((p - .5)/.2); sp = [sp[0] + .25*r, 0, 0]; bz = .1*r; }
       break;
     }
+    case 'interact': { const q=Math.sin(p*Math.PI);sp=[.25*q,0,0];hd=[.3*q,0,0];aL=[-1.1*q,0,.12];eL=[-.65*q,0,0];kR=[.2*q,0,0];kL=[.2*q,0,0];by=-.035*q;break; }
     case 'guard': { const q = ease(p/.4); aL = [-1.3*q - .2, .4*q, .1]; eL = [-1.3*q, 0, 0]; aR = [-2.2*q, 0, -.3]; eR = [-.4, 0, 0]; kR = [.4*q, 0, 0]; kL = [.4*q, 0, 0]; by = -.06*q; break; }
     case 'drink': { const q = Math.sin(p * Math.PI); aL = [-2.2*q, 0, -.4*q]; eL = [-1.8*q, 0, 0]; hd = [-.4*q, 0, 0]; break; }
     case 'hit': { const q = Math.sin(p * Math.PI); sp = [sp[0] - .45*q, 0, .1*q]; hd = [-.35*q, 0, 0]; bz = -.14*q; aR = [aR[0] + .5*q, 0, aR[2] - .3*q]; break; }
@@ -1642,7 +1647,7 @@ function animateUnit(u, dt, t){
   if (J.cape){ const sway = a.name === 'walk' ? .35 : .08 + Math.sin(t*1.3 + u.phase)*.04; rot(J.cape, sway, 0, Math.sin(t*.9 + u.phase)*.05, k*.6); }
   if (J.wingR){ const f = Math.sin(t * (a.name === 'cast' || a.name === 'roar' ? 6 : 1.6)) * .3; J.wingR.rotation.y = .5 + f; J.wingL.rotation.y = -.5 - f; }
   if (J.weapon && J.weapon.userData.orb){ const o = J.weapon.userData.orb; o.rotation.y = t*1.5; }
-  if(J.supportGrip && !['death','dead','drink','throw'].includes(a.name))solveSupportHand(J);
+  if(J.supportGrip && !['death','dead','drink','throw','interact'].includes(a.name))solveSupportHand(J);
   if (J.core){ J.core.scale.setScalar(!SET.flashes||SET.reduced?1:1 + Math.sin(t*4)*.15); }
   if(u.side==='enemy'&&!u.awake&&u.kindKey==='esqueleto'){const hero=G.units.find(x=>x.side==='hero'&&x.alive);if(hero)J.head.rotation.y=clamp(Math.atan2(hero.wx-u.wx,hero.wz-u.wz)-u.facing,-.65,.65);}
 }
@@ -1719,7 +1724,7 @@ function updateFx(dt, t){ for (let i = FX.length - 1; i >= 0; i--){ if (FX[i](dt
 let shake = 0;
 function camShake(s){ if (!SET.reduced && SET.cameraShake) shake = Math.max(shake, s); }
 function glowSprite(color, size){ const s = new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow, color, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true})); s.scale.set(size, size, 1); return s; }
-function disposeObj(o){ scene.remove(o); o.traverse(m => { if (m.geometry) m.geometry.dispose(); if (m.material && !m.material.userData.shared){ (Array.isArray(m.material) ? m.material : [m.material]).forEach(mm => mm.dispose()); } }); }
+function disposeObj(o){ scene.remove(o); o.traverse(m => { if (m.geometry) m.geometry.dispose(); if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(mm => {if(!mm.userData?.shared)mm.dispose();}); }); }
 function unitPos(u, y=1){ return new THREE.Vector3(u.wx, (y === 'chest' ? (u.m.height*.62) : y) , u.wz); }
 function handPos(u){
   const J = u.m.J; const v = new THREE.Vector3();
@@ -1825,7 +1830,7 @@ function floatText(pos, text, color='#ffffff', big=false){
 /* =====================================================================
    ESTADO DO JOGO E UNIDADES
    ===================================================================== */
-const G = {mode:'setup', units:[], order:[], turnIdx:0, round:1, active:null, sel:null, aim:null, busy:false, revealed:false, telegraph:null, log:[], dice:[], hover:null, placing:null, party:null, won:false, reach:null, stash:[], bossLoot:false, hpMul:1};
+const G = {scenario:'cripta', defeated:0,bossDefeated:false,mode:'setup', units:[], order:[], turnIdx:0, round:1, active:null, sel:null, aim:null, busy:false, revealed:false, telegraph:null, log:[], dice:[], hover:null, placing:null, party:null, won:false, reach:null, stash:[], bossLoot:false, hpMul:1};
 let itemSeq = 1;
 function newItem(wid, extra){
   const d = WEAPONS[wid];
@@ -1930,6 +1935,7 @@ function makeHero(def, c, r, saved){
 }
 function serializeHero(u){ return {tension:DR.tension(u.tension), id:u.hid, owner:u.owner, gold:u.gold, def:u.def, lvl:u.lvl, xp:u.xp, items:u.items, ammo:u.ammo, gold:u.gold, inv:u.inv.map(i => Object.assign({}, i, {thrownOut:undefined})), sets:u.sets, set:u.set, mast:u.mast, mp:u.mp, asiPending:u.asiPending, hp:u.hp}; }
 function saveParty(){
+  saveCampaign();
   if (isHost()) netPartySync();
   if (isGuest()) return;
   try {
@@ -2158,7 +2164,7 @@ async function damage(u, amount, {type='', src=null}={}){
       drawHpBar(u);
       if (G.units.filter(x => x.side === 'hero').every(x => x.down || !x.alive)) setTimeout(defeat, 1600);
     } else {
-      u.alive = false; setAnim(u, 'death'); sfx(MONSTERS[u.kindKey].sound === 'bones' ? 'bones' : 'death');
+      u.alive = false; G.defeated=(G.defeated||0)+1;if(MONSTERS[u.kindKey].boss)G.bossDefeated=true;setAnim(u, 'death'); sfx(MONSTERS[u.kindKey].sound === 'bones' ? 'bones' : 'death');
       logMsg(`${u.name} é destruído.`, 'hit');
       grantLoot(u);
       sinkCorpse(u);
@@ -2908,11 +2914,16 @@ function checkTriggers(){
 function revealSanctum(){
   if (G.revealed) return;
   G.revealed = true; sfx('reveal');
-  questEcho('Diante do Arauto');
-  logMsg('A névoa sobre o santuário se dissipa. Algo enorme se ergue entre as runas.', 'sys');
-  banner('O Santuário Desperta', 'O Arauto do Abismo espera do outro lado da ponte.');
-  let t = 0; const m0 = W3.mist.material.opacity;
-  addFx(dt => { t += dt; const q = clamp(t/2.2, 0, 1); W3.mist.material.opacity = m0 * (1 - q); W3.runeLight.intensity = 2.6 * q; W3.sanctumTop.emissiveIntensity = .15 + q; if (q >= 1){ W3.mist.visible = false; return false; } });
+  if(G.scenario==='cripta'){
+    questEcho('Diante do Arauto');
+    logMsg('A névoa sobre o santuário se dissipa. Algo enorme se ergue entre as runas.', 'sys');
+    banner('O Santuário Desperta', 'O Arauto do Abismo espera do outro lado da ponte.');
+  }else{
+    logMsg('A névoa recua e revela os guardiões ao norte. Há marcas recentes junto ao objetivo.', 'sys');
+    banner('Rastros na névoa', 'O caminho ao norte está revelado.');
+  }
+  let t = 0; const mist=W3.mist,light=W3.runeLight,top=W3.sanctumTop,m0=mist.material.opacity;
+  addFx(dt => { t += dt; const q = clamp(t/2.2, 0, 1); mist.material.opacity = m0 * (1 - q); light.intensity = 2.6 * q; top.emissiveIntensity = .15 + q; if (q >= 1){ mist.visible = false; return false; } });
   G.units.forEach(u => { if (u.r <= 6) u.m.root.visible = true; });
 }
 function rollInitiative(u){
@@ -3049,6 +3060,7 @@ async function runAI(u){
    ===================================================================== */
 function victory(){
   if (G.won) return; G.won = true; saveParty();
+  if(campaign.active){banner('O Arauto caiu','Aproxime-se do altar para decidir o destino do selo no diário de missões.');return;}
   openModal(md => md.append(
     h('span', {class:'eyebrow', text:'Vitória'}), h('h1', {text:'O Arauto cai no abismo'}),
     h('p', {class:'lead', text:'As runas se apagam uma a uma. Lá embaixo, o eco que chamava pela cripta finalmente se cala. O progresso do grupo foi salvo neste navegador.'}),
@@ -3146,7 +3158,7 @@ function banner(title, sub){ const el = $('banner'); el.replaceChildren(title, s
 function hideTip(){ $('tip').hidden = true; }
 function appendAll(parent, ...nodes){ for (const n of nodes.flat()) if (n != null && n !== false) parent.append(n); }
 
-function renderHUD(){ renderPhase(); renderInit(); renderHotbar(); renderPane(); }
+function renderHUD(){ renderPhase(); renderInit(); renderHotbar(); renderPane();if(UI.missionModal&&UI.missionKey!==missionViewKey())openMissionBook(); }
 function renderPhase(){
   const el = $('phase');
   if (G.mode === 'combat'){ el.textContent = `Combate · rodada ${G.round}`; el.className = 'phase combat'; }
@@ -3742,6 +3754,7 @@ function bindInput(){
   });
   window.addEventListener('resize', resize);
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { UI.tab = t.dataset.tab; UI.editSheet = false; renderPane(); }));
+  $('btnMissions').addEventListener('click',openMissionBook);
   $('btnGM').addEventListener('click', () => openDrawer('gm'));
   $('btnOpts').addEventListener('click', () => openDrawer('opts'));
   $('btnRules').addEventListener('click', openRules);
@@ -3757,7 +3770,7 @@ function bindInput(){
    MODAIS: INÍCIO, CRIAÇÃO, REGRAS, ESTADO DO PROJETO
    ===================================================================== */
 function openModal(build, wide){ const md = $('modal'); md.replaceChildren(); md.className = 'modal' + (wide ? ' wide' : ''); build(md); $('overlay').hidden = false; const f = md.querySelector('button,input'); if (f) f.focus(); }
-function closeModal(){ $('overlay').hidden = true; if (PV.renderer) PV.stop = true; }
+function closeModal(){ UI.missionModal=false; $('overlay').hidden = true; if (PV.renderer) PV.stop = true; }
 function openRules(){
   const sec = (t, p) => [h('h3', {text:t}), h('p', {text:p})];
   openModal(md => md.append(h('span', {class:'eyebrow', text:'Regras da mesa'}), h('h1', {text:'Como as rolagens funcionam'}),
@@ -3793,16 +3806,18 @@ function openStatus(){
         'Mascate (comprar e vender), baú do grupo, troca entre heróis com confirmação dos dois lados',
         'Dados com expressões (2d6+3), d4 a d100, histórico detalhado e rolagens secretas do Mestre',
         'Progresso do grupo salvo neste navegador',
+        'O Selo dos Nomes: missão principal em cinco etapas, três secundárias, diário compartilhado, recompensas únicas e três finais',
+        'Viagens entre vilarejo, floresta, castelo e cripta; cenários procedurais com objetivos marcados no mapa',
+        'Salas online com código, dados, inventário e missões sincronizados pelo servidor',
         'Atmosfera configurável, pausas sonoras, pistas antes do chefe e opções separadas para flashes, tremor e violência',
         'Tensão opcional do Mestre, recuperação voluntária e duração limitada, sincronizada na sala',
         'Origem, motivação, medo, vínculos, segredo compartilhado e missão pessoal com aprovação do Mestre',
         'Rosto, corte de cabelo, constituição, cicatriz e tatuagem; prévia neutra com zoom e giro 360° (modelos procedurais)'])),
       h('div', {}, h('h3', {class:'pend', text:'Próximas etapas'}), li([
         'Etapa 2: as outras 21 classes, 3 especializações por classe e o editor de classes com aprovação do Mestre',
-        'Etapa 3: campanha da névoa com 10 missões ligadas, facções, NPCs, diário e finais; aventura rápida e campanha personalizada',
-        'Etapa 4: salas online com código. Validar dados, inventário e trocas no servidor exige um backend (por exemplo no Render); um artefato sozinho não roda servidor',
+        'Etapa 3: ampliar a campanha para 10 missões ligadas, facções, NPCs e campanha personalizada',
         'Etapa 5: simulações reproduzíveis de equilíbrio com relatório',
-        'Direção 16: atmosfera, tensão opcional, personalidade e personalização procedural implementadas; protagonistas finais, novos mapas, animação facial e IK dependem da próxima produção 3D'])) ),
+        'Direção 16: protagonistas finais, acabamento artístico dos cenários, animação facial e IK de pés continuam pendentes'])) ),
     h('button', {class:'btn go', type:'button', onclick:closeModal}, 'Voltar ao jogo')), true);
 }
 function openStart(){
@@ -3813,7 +3828,7 @@ function openStart(){
     h('p', {class:'note', text:'Clique num herói e depois num quadrado para andar. Em combate, cada um tem movimento, uma ação, uma ação bônus e uma reação. O som começa quando você entrar.'}),
     h('div', {class:'row'},
       NET.available ? h('button', {class:'btn gold', type:'button', onclick:() => { audioInit(); openOnline(); }}, 'Jogar online', h('small', {text:'criar ou entrar numa sala'})) : null,
-      saved ? h('button', {class:'btn gold', type:'button', onclick:() => { audioInit(); closeModal(); G.stash = saved.stash || []; startGame(null, saved.heroes); }}, 'Continuar grupo salvo', h('small', {text:saved.heroes.map(x => x.def.name.split(' ')[0]).join(', ')})) : null,
+      saved ? h('button', {class:'btn gold', type:'button', onclick:() => { audioInit(); closeModal(); G.stash = saved.stash || []; restoreCampaign();startGame(null, saved.heroes); }}, 'Continuar grupo salvo', h('small', {text:saved.heroes.map(x => x.def.name.split(' ')[0]).join(', ')})) : null,
       h('button', {class:'btn go', type:'button', onclick: () => { audioInit(); openCreator(); }}, 'Criar o grupo', h('small', {text:'atributos, maestrias, armas e aparência'})),
       h('button', {class:'btn', type:'button', onclick: () => { audioInit(); closeModal(); G.stash = []; startGame(defaultParty()); }}, 'Descer com o grupo pronto'),
       h('button', {class:'btn', type:'button', onclick:openArsenal}, 'Ver o arsenal'),
@@ -3995,9 +4010,10 @@ function netOn(m){
   switch (m.t){
     case 'joined': {
       NET.pid = m.you.pid; NET.token = m.you.token; NET.role = m.you.role === 'host' ? 'host' : 'guest';
-      NET.room = m.room; NET.code = m.room.code; NET.party = m.room.party || []; NET.players = m.room.players || []; NET.trades = m.room.trades || [];
+      NET.room = m.room; NET.resumeSnap=m.snap;NET.code = m.room.code; NET.party = m.room.party || []; NET.players = m.room.players || []; NET.trades = m.room.trades || [];
       saveNetSession();
-      applyCampaignSettings(m.room.settings);
+      applyCampaignSettings(m.room.settings);campaign=QUEST.normalize(m.room.campaign);
+      if(REGIONS[m.room.region]&&m.room.region!==G.scenario)rebuildRegion(m.room.region);updateQuestMarkers();
       if (isGuest()){
         resetLocalGame();
         G.log = (m.room.log || []).slice().reverse(); G.dice = (m.rolls || []).slice().reverse(); G.stash = m.room.stash || [];
@@ -4006,6 +4022,7 @@ function netOn(m){
       setNetStatus(); renderHUD();
       break;
     }
+    case 'mission': {campaignUpdate(m.campaign);if(m.start&&isHost()){travelRegion('vila');if(UI.missionModal)openMissionBook();}if(m.reward){if(isHost())logMsg(m.reward,'sys');saveParty();}break;}
     case 'tape':
       if (NET.tape.length && NET.tapeStart + NET.tape.length === m.start) NET.tape.push(...m.values);
       else { NET.tape = m.values.slice(); NET.tapeStart = m.start; NET.tapePos = m.start; }
@@ -4029,7 +4046,7 @@ function snapUnit(u){
     ac:!!u.acted, bo:!!u.bonus, re:!!u.reactUsed, sw:!!u.swapped, lv:u.lvl || 0, xp:u.xp || 0, en:!!u.enraged, set:u.set || 0, init:u.init || 0};
 }
 function buildSnap(){
-  return {mode:G.mode, round:G.round, turnIdx:G.turnIdx, order:G.order.map(u => u.id), active:G.active ? G.active.id : null, revealed:G.revealed, won:G.won, tele:G.telegraph ? G.telegraph.tiles : null, hpMul:G.hpMul,
+  return {scenario:G.scenario,defeated:G.defeated||0,bossDefeated:!!G.bossDefeated,mode:G.mode, round:G.round, turnIdx:G.turnIdx, order:G.order.map(u => u.id), active:G.active ? G.active.id : null, revealed:G.revealed, won:G.won, tele:G.telegraph ? G.telegraph.tiles : null, hpMul:G.hpMul,
     units:G.units.filter(u => u.alive || u.side === 'hero' || u.m.root.visible).map(snapUnit)};
 }
 function netTick(){
@@ -4052,7 +4069,7 @@ async function netCreate(){
   try {
     if (!NET.ws) await netConnect();
     const heroes = G.units.filter(u => u.side === 'hero').map(serializeHero);
-    netSend({t:'create', name, party:heroes, stash:G.stash, settings:{artifice:SET.artifice !== false,tensionEnabled:SET.tensionEnabled,tensionDC:SET.tensionDC}});
+    netSend({t:'create', name, party:heroes, stash:G.stash, campaign,region:G.scenario,settings:{artifice:SET.artifice !== false,tensionEnabled:SET.tensionEnabled,tensionDC:SET.tensionDC}});
     await waitMsg('joined');
     NET.wantHost = null;
     G.units.filter(u => u.side === 'hero').forEach(u => { u.owner = NET.pid; });
@@ -4071,6 +4088,7 @@ function onIntent(m){
     else if (m.k === 'perform'){ if (myTurn && canUse(u, m.id).ok && validTarget(u, m.id, m.c, m.r)) await perform(u, m.id, m.c, m.r); }
     else if (m.k === 'endTurn'){ if (G.mode === 'combat' && G.active === u) await endTurn(); }
     else if (m.k === 'equip'){ equip(u, m.uid, m.set, m.slot); }
+    else if(m.k==='missionInteract'){if(myTurn)await interactQuest(u,m.quest);}
     else if(m.k==='recoverTension'){ if(myTurn)recoverTension(u); }
     else if (m.k === 'unequip'){ unequip(u, m.set, m.slot); }
   }).catch(e => console.error(e));
@@ -4080,6 +4098,10 @@ function applySnap(s){
   if (!s || !Array.isArray(s.units)) return;
   NET.replay = true;
   try {
+    if(REGIONS[s.scenario]&&s.scenario!==G.scenario){resetLocalGame();rebuildRegion(s.scenario);}
+    G.defeated=s.defeated||0;G.bossDefeated=!!s.bossDefeated;
+    if(!s.revealed&&G.revealed){G.revealed=false;W3.mist.visible=true;W3.mist.material.opacity=.94;W3.runeLight.intensity=0;W3.sanctumTop.emissiveIntensity=.15;}
+    if(!s.won)G.won=false;
     const seen = new Set();
     for (const d of s.units){
       seen.add(d.id);
@@ -4098,7 +4120,7 @@ function applySnap(s){
       drawHpBar(u);
     }
     for (const u of G.units.slice()) if (!seen.has(u.id)){ disposeObj(u.m.root); G.units.splice(G.units.indexOf(u), 1); }
-    const key = `${s.mode}|${s.round}|${s.active}|${s.turnIdx}`;
+    const key = `${s.scenario}|${s.mode}|${s.round}|${s.active}|${s.turnIdx}`;
     G.mode = s.mode; G.round = s.round; G.turnIdx = s.turnIdx; G.hpMul = s.hpMul;
     G.order = (s.order || []).map(id => G.units.find(u => u.id === id)).filter(Boolean);
     G.active = G.units.find(u => u.id === s.active) || null;
@@ -4112,6 +4134,7 @@ function applySnap(s){
     if (s.won && !G.won) victory();
     const now = performance.now();
     if (key !== NET.hudKey || now - NET.lastHud > 450){ NET.hudKey = key; NET.lastHud = now; renderHUD(); if (!G.busy) updatePreview(); }
+    if(UI.missionModal&&UI.missionKey!==missionViewKey())openMissionBook();
   } finally { NET.replay = false; }
 }
 function applyPartyRecords(){
@@ -4174,7 +4197,7 @@ function openOnline(){
     const nm = h('input', {id:'nName', value:nameV, maxlength:'24', placeholder:'Como os outros vão te ver'});
     const code = h('input', {id:'nCode', maxlength:'6', placeholder:'ABC123', style:'text-transform:uppercase;letter-spacing:.2em;font-family:var(--f-mono)'});
     const name = () => { const v = nm.value.trim().slice(0, 24) || 'Aventureiro'; try { localStorage.setItem('ecos.name', v); } catch(e){} return v; };
-    const host = how => { NET.wantHost = {name:name()}; closeModal(); if (how === 'atual') netCreate(); else if (how === 'pronto'){ resetLocalGame(); G.stash = []; startGame(defaultParty()); } else if (how === 'salvo'){ resetLocalGame(); G.stash = saved.stash || []; startGame(null, saved.heroes); } else openCreator(); };
+    const host = how => { NET.wantHost = {name:name()}; closeModal(); if (how === 'atual') netCreate(); else if (how === 'pronto'){ resetLocalGame(); G.stash = []; startGame(defaultParty()); } else if (how === 'salvo'){ resetLocalGame(); G.stash = saved.stash || []; restoreCampaign();startGame(null, saved.heroes); } else openCreator(); };
     appendAll(md, h('p', {class:'note', text:'Quem cria a sala é o Mestre: roda os monstros e o combate com os dados sorteados pelo servidor. Quem entra escolhe um herói e joga no próprio turno. Inventário, compras e trocas são conferidos no servidor.'}),
       h('div', {class:'field'}, h('label', {for:'nName', text:'Seu nome'}), nm),
       sess && sess.code ? h('button', {class:'btn gold', type:'button', onclick:() => netJoin(sess.code, name(), sess.token)}, `Voltar para a sala ${sess.code}`, h('small', {text: sess.role === 'host' ? 'como Mestre' : 'como jogador'})) : null,
@@ -4197,7 +4220,10 @@ async function netJoin(code, name, token){
     closeModal();
     if (isHost()){
       resetLocalGame(); G.stash = (NET.room && NET.room.stash) || [];
-      startGame(null, NET.party.map(p => JSON.parse(JSON.stringify(p))));
+      if(NET.resumeSnap?.units?.length){
+        G.party=NET.party.map(p=>p.def);G.bossLoot=!!NET.resumeSnap.bossDefeated;applySnap(NET.resumeSnap);saveParty();
+        if(G.mode==='combat'&&G.active?.side==='enemy'&&!SET.gmControl)setTimeout(()=>runAI(G.active),200);
+      }else startGame(null, NET.party.map(p => JSON.parse(JSON.stringify(p))));
       banner(`Sala ${NET.code}`, 'Você retomou a mesa como Mestre.');
     } else {
       banner(`Sala ${NET.code}`, 'Você entrou na mesa.');
@@ -4263,6 +4289,8 @@ function renderTrades(pane){
    INÍCIO DA PARTIDA E LAÇO PRINCIPAL
    ===================================================================== */
 function startGame(party, saved){
+  G.defeated=0;G.bossDefeated=false;
+  if(!saved){campaign=QUEST.initial();if(G.scenario!=='cripta')rebuildRegion('cripta');saveCampaign();}
   DIRECTOR.seen.clear();DIRECTOR.quiet=DIRECTOR.elapsed+15;DIRECTOR.next=DIRECTOR.elapsed+20;
   const spots = [[5, 21], [6, 21], [7, 21]];
   if (saved){ G.party = saved.map(s => s.def); saved.forEach((s, i) => { const u = makeHero(s.def, ...spots[i], s); u.hid = s.id || 'h' + i; u.owner = s.owner || null; G.units.push(u); }); }
@@ -4270,12 +4298,12 @@ function startGame(party, saved){
   const heroes = G.units.filter(u => u.side === 'hero');
   const avgLvl = heroes.reduce((s, u) => s + u.lvl, 0) / heroes.length;
   G.hpMul = 1 + .12 * (avgLvl - 1) + .2 * (heroes.length - 3);
-  const foes = [['esqueleto', 3, 15], ['esqueleto', 10, 15], ['aranha', 6, 15], ['lobisomem', 6, 11], ['aranha', 5, 9], ['arauto', 6, 2], ['esqueleto', 4, 3], ['esqueleto', 8, 3]];
+  const foes = REGIONS[G.scenario].foes;
   for (const [k, c, r] of foes){ const m = makeMonster(k, c, r, false); if (r <= 6 && !SET.gmView) m.m.root.visible = false; G.units.push(m); }
   G.mode = 'explore'; G.sel = G.units[0];
   CAM.want.set(0, 0, 11.5); CAM.target.set(0, 0, 13); setCamMode(SET.cam);
-  logMsg(`O grupo desce à cripta (nível médio ${avgLvl.toFixed(1)}; inimigos ajustados em ${Math.round(G.hpMul*100)}% da vida).`, 'sys');
-  banner('A Cripta', 'Clique num herói e depois num quadrado para andar.');
+  logMsg(`O grupo explora ${REGIONS[G.scenario].name} (nível médio ${avgLvl.toFixed(1)}; inimigos ajustados em ${Math.round(G.hpMul*100)}% da vida).`, 'sys');
+  banner(REGIONS[G.scenario].name, 'Clique num herói e depois num quadrado para andar. Objetivos no diário de missões.');
   if (NET.wantHost) netCreate();
   saveParty();
   renderHUD(); updatePreview();
@@ -4445,7 +4473,7 @@ function questEcho(place){
   }
 }
 function directionExplore(){
-  if (isGuest() || G.mode==='setup') return;
+  if (isGuest() || G.mode==='setup'||G.scenario!=='cripta') return;
   const heroes=G.units.filter(u=>u.side==='hero'&&u.alive&&!u.down);if(!heroes.length)return;
   const row=Math.min(...heroes.map(u=>u.r));
   const clues=[
@@ -4605,11 +4633,165 @@ renderGM=function(){renderGMBase();if(UI.drawer==='gm')directionGM($('drawer'));
 const renderSheetBase=renderSheet;
 renderSheet=function(pane){renderSheetBase(pane);const u=G.sel||G.active;if(u?.side==='hero'&&!UI.editSheet)directionSheet(pane,u);};
 
+/* Campanha e cenários: estado narrativo separado da simulação dos encontros. */
+const QUEST=window.EcosCampaign;
+let campaign=QUEST.initial();
+const REGIONS={
+ cripta:{name:'Cripta do Selo',color:0x0b1a33,foes:[['esqueleto',3,15],['esqueleto',10,15],['aranha',6,15],['lobisomem',6,11],['aranha',5,9],['arauto',6,2],['esqueleto',4,3],['esqueleto',8,3]]},
+ vila:{name:'Vilarejo de Valdenegro',color:0x18232b,obstacles:[[2,18],[10,18],[3,14],[9,14],[2,10],[10,10],[4,4],[8,4]],foes:[['esqueleto',3,12],['esqueleto',9,12],['aranha',6,11],['esqueleto',6,4]]},
+ floresta:{name:'Floresta dos Enforcados',color:0x13251f,obstacles:[[2,19],[9,19],[4,16],[8,15],[2,13],[10,11],[4,10],[8,7],[2,4],[10,3]],foes:[['aranha',6,15],['aranha',3,12],['lobisomem',8,11],['lobisomem',6,4]]},
+ castelo:{name:'Castelo da Última Vigília',color:0x202232,obstacles:[[3,19],[9,19],[3,15],[9,15],[3,11],[9,11],[4,5],[8,5]],foes:[['esqueleto',4,15],['esqueleto',8,15],['lobisomem',6,11],['esqueleto',4,3],['esqueleto',8,3]]}
+};
+const CRYPT_MAP=MAP.slice();
+function regionMap(key){
+ if(key==='cripta')return CRYPT_MAP.slice();
+ const rows=Array.from({length:23},(_,r)=>Array.from({length:13},(_,c)=>r>0&&r<22&&c>0&&c<12?(r<=6?'B':'c'):' '));
+ for(const [c,r] of REGIONS[key].obstacles)rows[r][c]='P';return rows.map(r=>r.join(''));
+}
+function buildAlternateWorld(){
+ const key=G.scenario,region=REGIONS[key];
+ const stone=tint(TX.rock,key==='floresta'?0x364337:0x6c7074,{roughness:.92}),wood=tint(TX.leather,0x382c25,{roughness:.95}),iron=tint(TX.metal,0x393b3d,{roughness:.62,metalness:.65});
+ const floor=tint(TX.rock,key==='floresta'?0x354331:0x525c63,{roughness:.78,metalness:.04});
+ const ground=mk(box(19,.7,34),floor,0,-.38,0);scene.add(ground);
+ const dark=std(0x090d12),roof=std(0x272b34,{roughness:.8});
+ const addLamp=(x,z)=>{scene.add(mk(cyl(.035,.06,1.8,8),iron,x,.9,z));scene.add(flame(x,1.9,z,.65));const l=new THREE.PointLight(key==='floresta'?0xa1c8a2:0xffba73,1.6,6,2);l.position.set(x,1.7,z);l.userData.base=1.6;scene.add(l);W3.torchLights.push(l);};
+ const branch=(g,a,b,r)=>{const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),delta=end.clone().sub(start);const m=mk(cyl(r*.65,r,delta.length(),8),wood,...start.add(end).multiplyScalar(.5).toArray());m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());g.add(m);};
+ const tree=(x,z,i,small=false)=>{const g=new THREE.Group();g.position.set(x,0,z);const height=small?2.5:4.2+(i%3)*.4;branch(g,[0,0,0],[.25,height*.6,.1],.25);branch(g,[.25,height*.6,.1],[-.35,height,.1],.15);for(const side of [-1,1]){branch(g,[.15,height*.45,0],[side*.9,height*.75,.25],.11);branch(g,[side*.9,height*.75,.25],[side*1.35,height*.8,-.1],.045);branch(g,[side*.75,height*.7,.2],[side*.65,height*.95,.25],.05);}scene.add(g);};
+ const house=(x,z,i)=>{
+   const g=new THREE.Group();g.position.set(x,0,z);g.add(mk(box(2.5,2.8,2.8),stone,0,1.4,0));
+   for(const side of [-1,1]){const pitch=mk(box(1.9,.15,3.15),roof,side*.65,3.1,0);pitch.rotation.z=side*-.6;g.add(pitch);}
+   g.add(mk(box(.65,1.55,.04),wood,0,.8,1.42));
+   for(const side of [-1,1]){g.add(mk(box(.45,.55,.04),dark,side*.8,1.65,1.42));for(let b=0;b<3;b++){const plank=mk(box(.55,.06,.07),wood,side*.8,1.5+b*.15,1.46);plank.rotation.z=(i%2?.22:-.16);g.add(plank);}}
+   for(const side of [-1,1])g.add(mk(box(.1,2.8,.1),wood,side*1.23,1.4,1.4));g.rotation.y=x>0?-Math.PI/2:Math.PI/2;scene.add(g);
+ };
+ if(key==='vila'){
+   for(let i=0;i<6;i++){house(-11,-13+i*5,i);house(11,-11+i*5,i+1);}
+   const well=mk(new THREE.TorusGeometry(.6,.18,10,24),stone,-5,.65,6);well.rotation.x=Math.PI/2;scene.add(well);
+   for(let i=0;i<7;i++){const plank=mk(box(.12,.08,1.5),wood,5+i*.12,.2,10);plank.rotation.y=.15;scene.add(plank);}
+ }else if(key==='floresta'){
+   for(let i=0;i<28;i++)tree((i%2?-1:1)*(10+(i%3)*1.3),-17+Math.floor(i/2)*2.5,i);
+   const water=mk(new THREE.PlaneGeometry(3,34),std(0x192d2b,{roughness:.12,metalness:.5}),-6,.015,0,false);water.rotation.x=-Math.PI/2;scene.add(water);
+ }else{
+   for(const side of [-1,1]){
+    for(let i=0;i<9;i++){scene.add(mk(box(1.1,3+(i%3)*.4,3.2),stone,side*10,1.6,-14+i*3.7));scene.add(mk(box(1.4,.4,.7),iron,side*10,3.5,-14+i*3.7));}
+    const tower=mk(cyl(1.6,1.9,7,12),stone,side*9,3.5,-15);scene.add(tower);
+    for(let i=0;i<8;i++){const angle=i*Math.PI/4;scene.add(mk(box(.5,.8,.5),stone,side*9+Math.sin(angle)*1.5,7,-15+Math.cos(angle)*1.5));}
+   }
+   for(const x of [-6,6]){const cloth=new THREE.Mesh(new THREE.PlaneGeometry(1.2,3),tint(TX.cloth,0x5f1e2b,{side:THREE.DoubleSide,roughness:1}));cloth.position.set(x,3.2,-12);scene.add(cloth);}
+ }
+ for(let r=0;r<GH;r++)for(let c=0;c<GW;c++)if(MAP[r][c]==='P'){
+   if(key==='floresta')tree(tx(c),tz(r),c+r,true);
+   else if(key==='castelo'){scene.add(mk(cyl(.38,.5,3.7,12),stone,tx(c),1.85,tz(r)));scene.add(mk(box(1.05,.25,1.05),stone,tx(c),3.8,tz(r)));}
+   else{scene.add(mk(box(.95,.65,.95),wood,tx(c),.33,tz(r)));const wheel=mk(new THREE.TorusGeometry(.35,.045,8,16),iron,tx(c)+.5,.35,tz(r));wheel.rotation.y=Math.PI/2;scene.add(wheel);}
+ }
+ for(const [x,z]of[[-7,13],[7,13],[-7,4],[7,-3],[-6,-12],[6,-12]])addLamp(x,z);
+ W3.sanctumTop=std(0x55606a,{emissive:0x7fa9b4,emissiveIntensity:.15});scene.add(mk(cyl(1.5,1.7,.18,24),W3.sanctumTop,0,.08,-13.5));
+ W3.runeLight=new THREE.PointLight(0x7cb4ca,0,15,2);W3.runeLight.position.set(0,2,-13);scene.add(W3.runeLight);
+ W3.mist=mk(cyl(8,8,7,32),new THREE.MeshBasicMaterial({color:region.color,transparent:true,opacity:.94,depthWrite:false}),0,2.5,-13,false);scene.add(W3.mist);
+ const bg=mk(new THREE.PlaneGeometry(300,300),std(key==='floresta'?0x17231b:0x161e28),0,-1,0,false);bg.rotation.x=-Math.PI/2;scene.add(bg);
+}
+function rebuildRegion(key){
+ if(!REGIONS[key])key='cripta';
+ const sharedTextures=new Set(Object.values(TX)),retiredTextures=new Set();
+ for(const node of W3.worldNodes||[])node.traverse(o=>{for(const mat of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean))for(const value of Object.values(mat))if(value?.isTexture&&!sharedTextures.has(value))retiredTextures.add(value);});
+ for(const node of W3.worldNodes||[])disposeObj(node);
+ for(const texture of retiredTextures)texture.dispose();
+ for(const field of ['walls','torches','torchLights','highlights','shafts','islands','crystals'])W3[field]=[];
+ W3.motes=null;W3.hlUsed=0;DIRECTOR.fog=[];DIRECTOR.silhouettes=[];
+ MAP=regionMap(key);G.scenario=key;
+ const before=new Set(scene.children);buildWorld();buildDreadScene();buildQuestMarkers();
+ W3.worldNodes=scene.children.filter(n=>!before.has(n));
+ scene.background.setHex(REGIONS[key].color);scene.fog.color.setHex(REGIONS[key].color);applyQuality();
+}
+function travelRegion(key){
+ if(isGuest()||G.busy||G.mode==='combat'||!REGIONS[key])return;
+ const records=G.units.filter(u=>u.side==='hero').map(serializeHero);
+ resetLocalGame();rebuildRegion(key);G.defeated=0;G.bossDefeated=false;
+ startGame(null,records);logMsg(`O grupo chega a ${REGIONS[key].name}.`,'sys');
+ saveCampaign();if(isHost())netSend({t:'region',area:key});
+}
+function saveCampaign(){if(isGuest())return;try{localStorage.setItem('ecos.campaign.v1',JSON.stringify({state:campaign,area:G.scenario}));}catch(e){}}
+function restoreCampaign(){try{const saved=JSON.parse(localStorage.getItem('ecos.campaign.v1')||'null');if(saved){campaign=QUEST.normalize(saved.state);if(REGIONS[saved.area]&&saved.area!==G.scenario)rebuildRegion(saved.area);}}catch(e){}}
+function campaignEvidence(u){return {area:G.scenario,mode:G.mode,c:u?.c,r:u?.r,alive:u?.alive,down:u?.down,kills:G.defeated||0,boss:!!G.bossDefeated};}
+function campaignUpdate(state){campaign=QUEST.normalize(state);saveCampaign();updateQuestMarkers();renderHUD();}
+function startCampaign(){
+ if(isGuest()||G.busy||G.mode==='combat'||campaign.active)return;
+ if(online()){netSend({t:'missionStart'});return;}
+ campaign=QUEST.initial();campaign.active=true;campaign.side=QUEST.normalize(campaign).side;campaign.journal=[QUEST.DATA.intro];campaign.revision++;
+ campaignUpdate(campaign);travelRegion('vila');openMissionBook();
+}
+function acceptSide(id){
+ if(isGuest()){netSend({t:'missionAccept',id});return;}
+ if(online()){netSend({t:'missionAccept',id});return;}
+ if(!campaign.active||!QUEST.DATA.side.some(q=>q.id===id)||['active','completed'].includes(campaign.side[id]))return;
+ campaign.side[id]='active';campaign.revision++;campaignUpdate(campaign);
+}
+async function interactQuest(u,id,ending){
+ if(!u||G.busy||!canControl(u))return;
+ const error=QUEST.eligibility(campaign,id,campaignEvidence(u));if(error){toast(error);return;}
+ const q=QUEST.objective(campaign,id);
+ if(q.boss&&!ending){if(isGuest()){toast('O Mestre conduz a escolha final no diário.');return;}openMissionEnding(u);return;}
+ if(isGuest()){netIntent(u,{k:'missionInteract',quest:id});return;}
+ if(online()){
+   setAnim(u,'interact');netSend({t:'snap',s:buildSnap()});netSend({t:'missionProgress',id,hero:u.hid,revision:campaign.revision,ending});return;
+ }
+ const result=QUEST.advance(campaign,id,campaignEvidence(u),ending);if(result.error){toast(result.error);return;}
+ setAnim(u,'interact');G.units.filter(x=>x.side==='hero').forEach(x=>x.gold+=result.gold);
+ logMsg(`${result.title} concluída: ${result.gold} moedas para cada protagonista.`,'sys');campaignUpdate(result.state);saveParty();
+}
+function openMissionEnding(u){
+ UI.missionModal=false;
+ openModal(md=>md.append(h('span',{class:'eyebrow',text:'Decisão do grupo · conduzida pelo Mestre'}),h('h1',{text:'O destino dos nomes'}),h('p',{text:QUEST.DATA.steps[4].dialogue}),
+ ...Object.entries(QUEST.DATA.endings).map(([id,e])=>h('button',{class:'btn',type:'button',onclick:()=>{closeModal();interactQuest(u,'main',id);openMissionBook();}},e.title,h('small',{text:e.text}))),h('button',{class:'btn',type:'button',onclick:()=>{closeModal();openMissionBook();}},'Ainda não decidir')));
+}
+function missionViewKey(){return JSON.stringify([campaign.revision,G.scenario,G.mode,G.busy,G.defeated,G.bossDefeated,G.sel?.id,G.units.filter(u=>u.side==='hero').map(u=>[u.c,u.r,u.alive,u.down,u.owner])]);}
+function openMissionBook(){
+ UI.missionKey=missionViewKey();
+ UI.missionModal=true;
+ openModal(md=>{
+  md.classList.add('mission-book');
+  const stage=QUEST.DATA.steps[campaign.step],hero=G.sel?.side==='hero'?G.sel:G.units.find(u=>canControl(u));
+  md.append(h('span',{class:'eyebrow',text:'Diário da expedição'}),h('h1',{text:QUEST.DATA.title}),h('p',{class:'lead',text:QUEST.DATA.intro}));
+  if(!campaign.active)md.append(h('button',{class:'btn go',type:'button',disabled:isGuest()||G.mode==='setup'||G.mode==='combat',onclick:startCampaign},'Iniciar missão principal',h('small',{text:'O Mestre inicia a expedição em Valdenegro com o grupo atual.'})));
+  else if(campaign.completed){const e=QUEST.DATA.endings[campaign.ending];md.append(h('h2',{text:e?.title||'Missão concluída'}),h('p',{text:e?.text||''}));}
+  else{
+   const reason=QUEST.eligibility(campaign,'main',campaignEvidence(hero));
+   md.append(h('div',{class:'direction-card'},h('span',{class:'eyebrow',text:`Missão principal · ${campaign.step+1}/${QUEST.DATA.steps.length}`}),h('h2',{text:stage.title}),h('p',{text:stage.objective}),h('p',{class:'note',text:`${REGIONS[stage.area].name} · coluna ${stage.c+1}, linha ${stage.r+1} · recompensa: ${stage.gold} moedas por herói.`}),
+    G.scenario!==stage.area?h('button',{class:'btn go',type:'button',disabled:isGuest()||G.mode==='combat'||G.busy,onclick:()=>{travelRegion(stage.area);openMissionBook();}},`Viajar para ${REGIONS[stage.area].name}`):h('button',{class:'btn go',type:'button',disabled:!!reason||!canControl(hero),onclick:()=>interactQuest(hero,'main')},stage.boss?'Decidir o destino do selo':'Interagir com o objetivo'),
+    G.scenario===stage.area&&(stage.kills||stage.boss)?h('p',{class:'note',text:stage.boss?(G.bossDefeated?'Arauto vencido.':'O Arauto ainda guarda o selo.'):`Guardiões vencidos: ${Math.min(G.defeated,stage.kills)}/${stage.kills}.`}):null,
+    reason?h('p',{class:'note',text:reason}):null,h('button',{class:'btn',type:'button',disabled:G.scenario!==stage.area,onclick:()=>{CAM.want.set(tx(stage.c),0,tz(stage.r));closeModal();}},'Mostrar no mapa')));
+  }
+  if(campaign.active){
+   md.append(h('h2',{text:'Missões secundárias'}),...QUEST.DATA.side.map(q=>{
+    const status=campaign.side[q.id]||'available',reason=QUEST.eligibility(campaign,q.id,campaignEvidence(hero));
+    return h('div',{class:'direction-card'},h('b',{text:q.title}),h('p',{text:q.objective}),h('p',{class:'note',text:`${REGIONS[q.area].name} · coluna ${q.c+1}, linha ${q.r+1} · ${q.gold} moedas por herói · ${{available:'disponível',active:'em andamento',completed:'concluída'}[status]}`}),
+    status==='available'?h('button',{class:'btn',type:'button',onclick:()=>acceptSide(q.id)},'Aceitar missão'):status==='active'?h('button',{class:'btn',type:'button',disabled:!!reason||!canControl(hero),title:reason,onclick:()=>interactQuest(hero,q.id)},'Entregar objetivo'):null,
+    status==='active'&&reason?h('p',{class:'note',text:reason}):null,
+    status==='active'?h('button',{class:'btn',type:'button',disabled:G.scenario!==q.area,onclick:()=>{CAM.want.set(tx(q.c),0,tz(q.r));closeModal();}},'Mostrar objetivo secundário'):null);
+   }),h('details',{class:'direction-card'},h('summary',{text:'Etapas e descobertas'}),QUEST.DATA.steps.map((q,i)=>h('p',{text:`${i<campaign.step?'✓':i===campaign.step?'→':'○'} ${q.title}`})),campaign.journal.map(line=>h('p',{class:'story',text:line}))));
+   if(!isGuest())md.append(directionSelect('travelArea','Viagem livre (fora de combate)',G.scenario,Object.entries(REGIONS).map(([id,v])=>[id,v.name]),()=>{}),h('button',{class:'btn',type:'button',disabled:G.mode==='combat'||G.busy,onclick:()=>{travelRegion($('travelArea').value);openMissionBook();}},'Viajar com o grupo'));
+  }
+  md.append(h('button',{class:'btn',type:'button',onclick:closeModal},'Voltar à mesa'));
+ },true);
+}
+function buildQuestMarkers(){
+ W3.questMarkers=[];
+ const quests=[...QUEST.DATA.steps.map(q=>({...q,key:'main:'+q.id})),...QUEST.DATA.side.map(q=>({...q,key:q.id}))];
+ for(const q of quests.filter(q=>q.area===G.scenario)){
+  const group=new THREE.Group();group.position.set(tx(q.c),0,tz(q.r));
+  const mat=std(0x8a765a,{metalness:.65,roughness:.4});group.add(mk(box(.55,.85,.45),tint(TX.rock,0x666462),0,.42,0));
+  const relic=mk(q.id==='sino'?new THREE.ConeGeometry(.32,.42,16,1,true):q.id==='lanterna'?new THREE.CylinderGeometry(.16,.16,.4,12):box(.35,.08,.3),mat,0,1,0);group.add(relic);
+  const ring=mk(new THREE.RingGeometry(.5,.56,32),new THREE.MeshBasicMaterial({color:q.key.startsWith('main')?0xd9b46a:0x8fb8cf,side:THREE.DoubleSide,transparent:true,opacity:.8}),0,.025,0,false);ring.rotation.x=-Math.PI/2;group.add(ring);
+  group.userData.quest=q;group.userData.ring=ring;scene.add(group);W3.questMarkers.push(group);
+ }
+ updateQuestMarkers();
+}
+function updateQuestMarkers(){for(const marker of W3.questMarkers||[]){const q=marker.userData.quest;marker.visible=campaign.active&&(q.key.startsWith('main')?!campaign.completed&&QUEST.DATA.steps[campaign.step]?.id===q.id:campaign.side[q.id]==='active');}}
+
 function boot(){
   if (SET.artifice === undefined) SET.artifice = true;
   if (!window.THREE || !init3D()){ $('app').append(h('div', {class:'nogl', text:'Não foi possível abrir o WebGL neste navegador. O jogo precisa de aceleração 3D para funcionar.'})); return; }
   initParticles();
-  buildDreadScene();
   bindInput();
   resize();
   setCamMode(SET.cam);

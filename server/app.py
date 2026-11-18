@@ -24,6 +24,7 @@ from pathlib import Path
 
 from db import Store
 from direction import personality, campaign_settings, edit_personality
+import missions
 
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / 'public'
@@ -144,6 +145,8 @@ class Room:
         self.stash = d.get('stash', [])
         self.log = d.get('log', [])[-300:]
         self.settings = campaign_settings(d.get('settings'))
+        self.campaign = missions.normalize(d.get('campaign'))
+        self.region = d.get('region', 'cripta') if d.get('region', 'cripta') in ('cripta','vila','floresta','castelo') else 'cripta'
         self.snap = d.get('snap')
         self.mode = d.get('mode', 'explore')
         self.trades = {}
@@ -155,12 +158,12 @@ class Room:
         self.dirty = False
 
     def to_data(self):
-        return {'players': self.players, 'host': self.host, 'party': self.party, 'stash': self.stash, 'log': self.log[-300:],
+        return {'campaign': self.campaign, 'region': self.region, 'players': self.players, 'host': self.host, 'party': self.party, 'stash': self.stash, 'log': self.log[-300:],
                 'settings': self.settings, 'snap': self.snap, 'mode': self.mode, 'created': self.created,
                 'tape_next': self.tape_start + len(self.tape)}
 
     def public(self):
-        return {'code': self.code, 'host': self.host, 'party': self.party, 'stash': self.stash, 'settings': self.settings,
+        return {'campaign': self.campaign, 'region': self.region, 'code': self.code, 'host': self.host, 'party': self.party, 'stash': self.stash, 'settings': self.settings,
                 'players': [{'pid': p, 'name': v['name'], 'role': v['role'], 'online': p in self.conns} for p, v in self.players.items()],
                 'trades': list(self.trades.values()), 'log': self.log[-80:]}
 
@@ -466,6 +469,8 @@ async def on_message(conn, m):
         room.players[pid] = {'name': clean_name(m.get('name')), 'token': token, 'role': 'host'}
         room.host = pid
         room.settings = campaign_settings(m.get('settings'))
+        room.campaign = missions.normalize(m.get('campaign'))
+        room.region = m.get('region') if m.get('region') in ('cripta','vila','floresta','castelo') else 'cripta'
         for i, h in enumerate(m.get('party', [])[:6]):
             h['id'] = h.get('id') or f'h{i}'
             h['owner'] = pid
@@ -518,6 +523,18 @@ async def on_message(conn, m):
             h['owner'] = m.get('pid') if is_host and m.get('pid') in room.players else pid
             await room.push_party()
         return
+    if t == 'missionAccept':
+        ident = m.get('id')
+        if not room.campaign['active'] or not any(q['id'] == ident for q in missions.DATA['side']):
+            return await conn.send({'t':'error','msg':'Missão indisponível.'})
+        if room.campaign['side'].get(ident) == 'completed':
+            return await conn.send({'t':'error','msg':'A missão já foi concluída.'})
+        if room.campaign['side'].get(ident) != 'active':
+            room.campaign['side'][ident] = 'active'
+            room.campaign['revision'] += 1
+            room.dirty = True
+        await room.broadcast({'t':'mission','campaign':room.campaign})
+        return
     if t == 'personality':
         hero = room.hero(m.get('hero'))
         if not hero or not room.can_control(pid, m.get('hero')):
@@ -567,6 +584,37 @@ async def on_message(conn, m):
     # --- só o Mestre daqui para baixo ---
     if not is_host:
         return await conn.send({'t': 'error', 'msg': 'Só o Mestre pode fazer isso.'})
+    if t == 'missionStart':
+        if room.campaign['active'] or room.mode == 'combat':
+            return await conn.send({'t':'error','msg':'A campanha já está ativa ou a mesa está em combate.'})
+        room.campaign = missions.normalize({'active':True,'journal':[missions.DATA['intro']],'revision':1})
+        room.dirty = True
+        await room.broadcast({'t':'mission','campaign':room.campaign,'start':True})
+        return
+    if t == 'region':
+        if room.mode == 'combat' or m.get('area') not in ('cripta','vila','floresta','castelo'):
+            return await conn.send({'t':'error','msg':'Não é possível viajar agora.'})
+        room.region = m['area']
+        room.dirty = True
+        return
+    if t == 'missionProgress':
+        if m.get('revision') != room.campaign['revision']:
+            return await conn.send({'t':'error','msg':'O diário mudou. Atualize antes de concluir.'})
+        snap = room.snap or {}
+        hero = next((u for u in snap.get('units', []) if u.get('s') == 'hero' and u.get('hid') == m.get('hero')), None)
+        if not hero or not room.hero(m.get('hero')):
+            return await conn.send({'t':'error','msg':'Protagonista não encontrado.'})
+        evidence = {'area':snap.get('scenario','cripta'),'mode':snap.get('mode'), 'c':hero.get('c'),'r':hero.get('r'),'alive':hero.get('al'),'down':hero.get('dn'),'kills':snap.get('defeated',0),'boss':snap.get('bossDefeated',False)}
+        result, error = missions.advance(room.campaign, m.get('id'), evidence, m.get('ending'))
+        if error:
+            return await conn.send({'t':'error','msg':error})
+        room.campaign = result['state']
+        for hero in room.party:
+            hero['gold'] = hero.get('gold',0) + result['gold']
+        room.dirty = True
+        await room.push_party()
+        await room.broadcast({'t':'mission','campaign':room.campaign,'reward':f"{result['title']}: {result['gold']} moedas para cada protagonista."})
+        return
     if t == 'snap':
         room.snap = m.get('s')
         room.mode = (room.snap or {}).get('mode', room.mode)
