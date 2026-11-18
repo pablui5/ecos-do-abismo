@@ -23,6 +23,7 @@ import time
 from pathlib import Path
 
 from db import Store
+from direction import personality, campaign_settings, edit_personality
 
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / 'public'
@@ -142,7 +143,7 @@ class Room:
         self.party = d.get('party', [])              # heróis: inventário, conjuntos, ouro...
         self.stash = d.get('stash', [])
         self.log = d.get('log', [])[-300:]
-        self.settings = d.get('settings', {'artifice': True})
+        self.settings = campaign_settings(d.get('settings'))
         self.snap = d.get('snap')
         self.mode = d.get('mode', 'explore')
         self.trades = {}
@@ -422,7 +423,7 @@ async def execute_trade(room, tr):
     return None
 
 
-RUNTIME_FIELDS = ('hp', 'xp', 'lvl', 'ammo', 'items', 'mast', 'mp', 'asiPending', 'set')
+RUNTIME_FIELDS = ('tension', 'hp', 'xp', 'lvl', 'ammo', 'items', 'mast', 'mp', 'asiPending', 'set')
 
 def merge_runtime(room, heroes):
     """O Mestre roda o combate: aceita dele os campos de jogo, nunca a composição do inventário."""
@@ -464,11 +465,13 @@ async def on_message(conn, m):
         token = secrets.token_urlsafe(18)
         room.players[pid] = {'name': clean_name(m.get('name')), 'token': token, 'role': 'host'}
         room.host = pid
-        room.settings = {'artifice': bool(m.get('settings', {}).get('artifice', True))}
+        room.settings = campaign_settings(m.get('settings'))
         for i, h in enumerate(m.get('party', [])[:6]):
             h['id'] = h.get('id') or f'h{i}'
             h['owner'] = pid
             h.setdefault('gold', 40); h.setdefault('ammo', {}); h.setdefault('items', {}); h.setdefault('inv', []); h.setdefault('sets', [{'main': None, 'off': None}, {'main': None, 'off': None}])
+            h.setdefault('def', {})['personality'] = personality(h.get('def', {}).get('personality'))
+            h['def']['personality']['status'] = 'pending'
             room.party.append(h)
         room.stash = m.get('stash', [])[:200]
         rooms[code] = room
@@ -514,6 +517,25 @@ async def on_message(conn, m):
         if h and (h.get('owner') in (None, room.host) or h.get('owner') not in room.conns or is_host):
             h['owner'] = m.get('pid') if is_host and m.get('pid') in room.players else pid
             await room.push_party()
+        return
+    if t == 'personality':
+        hero = room.hero(m.get('hero'))
+        if not hero or not room.can_control(pid, m.get('hero')):
+            return await conn.send({'t': 'error', 'msg': 'Você não controla esse herói.'})
+        edit_personality(hero, m.get('value'))
+        await room.push_party()
+        return
+    if t == 'questDecision':
+        hero = room.hero(m.get('hero'))
+        if not is_host or not hero:
+            return await conn.send({'t': 'error', 'msg': 'Só o Mestre pode aprovar missões.'})
+        p = personality(hero.get('def', {}).get('personality'))
+        status = m.get('status')
+        if not p['quest'] or (p['status'], status) not in (('pending', 'approved'), ('approved', 'completed')):
+            return await conn.send({'t': 'error', 'msg': 'A missão precisa ser proposta, aprovada e então concluída.'})
+        p['status'] = status
+        hero['def']['personality'] = p
+        await room.push_party()
         return
     if t == 'intent':
         if not room.can_control(pid, m.get('hero')) and not (is_host and m.get('monster')):
@@ -590,7 +612,7 @@ async def on_message(conn, m):
                 room.stash.append(new_item(wid))
         await room.push_party()
     elif t == 'settings':
-        room.settings['artifice'] = bool(m.get('artifice', True))
+        room.settings = campaign_settings(m, room.settings)
         room.dirty = True
         await room.broadcast({'t': 'settings', 'settings': room.settings})
     elif t == 'resetParty':

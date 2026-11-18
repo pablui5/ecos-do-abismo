@@ -60,3 +60,7 @@ No plano gratuito, o serviço adormece quando ninguém usa e leva uns 30 segundo
 - simulações de equilíbrio.
 
 Modelos 3D esculpidos dependem de arquivos `.glb` externos.
+
+## Direção de terror e protagonistas
+
+A implementação parcial da direção 16 está descrita em [docs/DIRECAO-16.md](docs/DIRECAO-16.md), com recursos, regras de tensão, testes e pendências de produção 3D. Os modelos procedurais **não são protagonistas finalizados**.
