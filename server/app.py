@@ -457,6 +457,8 @@ def merge_runtime(room, heroes):
 async def on_message(conn, m):
     t = m.get('t')
     room = conn.room
+    if t == 'ping':
+        return
     if t == 'create':
         code = new_code()
         room = Room(code)

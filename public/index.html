@@ -334,6 +334,38 @@ body.big .hotbar .an{font-size:11px}
 .mode.dificil.on{border-color:var(--blood);box-shadow:0 0 0 1px var(--blood),0 0 16px rgba(226,82,63,.22)}.mode.dificil b{color:#f3a99e}
 .drawer .modes{grid-template-columns:minmax(0,1fr)}
 @media (max-width:520px){.modes{grid-template-columns:minmax(0,1fr)}.mode{flex-direction:row;align-items:baseline;gap:8px}.mode b{flex:none;width:64px}}
+/* ---------- Modo ação ---------- */
+.rt-pad{position:absolute;z-index:9;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,auto);grid-template-areas:"who who who" "swap pot sk1" "sk0 dodge atk";gap:8px;align-items:end;justify-items:center;pointer-events:none}
+.rt-pad>*{pointer-events:auto}
+.rt-who{grid-area:who;justify-self:end;display:flex;gap:8px;align-items:baseline;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass)}
+.rt-who b{font-family:var(--f-display);font-size:17px;color:#f1e6cc}.rt-who small{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.rtb{position:relative;width:62px;height:62px;border-radius:50%;border:1px solid var(--line2);background:radial-gradient(circle at 50% 35%,rgba(40,64,100,.9),rgba(8,14,26,.92));color:#dce8f5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.45);touch-action:none;-webkit-user-select:none;user-select:none;overflow:hidden;transition:transform .08s,border-color .15s}
+.rtb .ri{display:grid;place-items:center;position:relative;z-index:1}
+.rtb svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;position:relative;z-index:1}
+.rtb .rl{font-size:9.5px;line-height:1;max-width:58px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;z-index:1}
+.rtb kbd{position:absolute;top:5px;right:9px;font-family:var(--f-mono);font-size:9px;color:var(--muted);z-index:1}
+.rtb .rcd{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(2,5,10,.78) calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
+.rtb:active{transform:scale(.92)}
+.rtb.cool{color:var(--muted)}
+.rtb.atk{grid-area:atk;width:84px;height:84px;border-color:var(--gold);background:radial-gradient(circle at 50% 35%,#5a4317,#1b1306);color:var(--gold);box-shadow:0 0 22px rgba(224,188,114,.25),0 6px 18px rgba(0,0,0,.5)}
+.rtb.atk svg{width:32px;height:32px}
+.rtb.dodge{grid-area:dodge;border-color:var(--abyss);color:#bfe6ff;width:70px;height:70px}
+.rtb.sk0{grid-area:sk0}.rtb.sk1{grid-area:sk1}.rtb.swap{grid-area:swap;width:50px;height:50px}.rtb.pot{grid-area:pot;width:54px;height:54px}
+.rtb.sk0,.rtb.sk1{border-color:#5f4c26;color:#f1dba8}
+.rt-joy{position:absolute;z-index:9;left:max(18px,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(92,198,255,.08),rgba(6,12,22,.55));border:1px solid rgba(92,198,255,.35);touch-action:none;box-shadow:inset 0 0 30px rgba(0,0,0,.5)}
+.rt-joy i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#3d6d9a,#122438);border:1px solid var(--abyss);box-shadow:0 4px 14px rgba(0,0,0,.5)}
+#app:has(.rt-pad:not([hidden])) .side{bottom:calc(270px + env(safe-area-inset-bottom,0px))}
+@media (max-width:820px){
+  .rtb{width:56px;height:56px}.rtb.atk{width:78px;height:78px}.rtb.dodge{width:64px;height:64px}.rtb.swap{width:46px;height:46px}.rtb.pot{width:50px;height:50px}
+  .rt-pad{gap:6px;right:max(8px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  #app:has(.rt-pad:not([hidden])) .side{bottom:calc(250px + env(safe-area-inset-bottom,0px));height:min(34%,320px)}
+}
+@media (max-height:540px) and (min-width:560px){
+  .rt-pad{grid-template-areas:"swap pot sk1" "sk0 dodge atk"}.rt-who{display:none}
+  .rtb{width:50px;height:50px}.rtb.atk{width:68px;height:68px}.rtb.dodge{width:56px;height:56px}
+  .rt-joy{width:112px;height:112px}
+  #app:has(.rt-pad:not([hidden])) .side{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+}
 /* ---------- Animações ---------- */
 @keyframes rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
 @keyframes pop{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
@@ -477,6 +509,8 @@ body.big .hotbar .an{font-size:11px}
   <div class="tip" id="tip" hidden></div>
   <div class="banner" id="banner" hidden></div>
   <div class="hint" id="hint" hidden></div>
+  <div class="rt-pad" id="rtPad" hidden></div>
+  <div class="rt-joy" id="rtJoy" hidden><i></i></div>
   <div class="toast" id="toast" hidden></div>
   <div class="drawer" id="drawer" hidden></div>
 </div>
@@ -527,7 +561,7 @@ function doubleDice(expr){ const m = String(expr).match(/^(\d*)d(\d+)(.*)$/); re
 /* =====================================================================
    OPÇÕES (lembradas só neste navegador)
    ===================================================================== */
-const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, autoEnd:true, follow:true, ctrl:'facil', cam:'tatica', gmView:false, gmControl:false, light:1 };
+const SET = { quality:'media', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches, base:true, grid:true, sound:true, hints:true, big:false, tutSeen:false, autoEnd:true, follow:true, ctrl:'facil', play:'acao', cam:'tatica', gmView:false, gmControl:false, light:1 };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('ecos.set') || '{}')); } catch(e){}
 function saveSet(){ try { localStorage.setItem('ecos.set', JSON.stringify(SET)); } catch(e){} }
 
@@ -3140,7 +3174,7 @@ function checkTriggers(){
       for (const z of G.units) if (z.side === 'enemy' && z.alive && !z.awake && z.zone === e.zone && (z.r > 6 || G.revealed)){ z.awake = true; woke.push(z); }
     }
   }
-  if (woke.length){ if (G.mode === 'explore') startCombat(woke); else if (G.mode === 'combat') joinCombat(woke); }
+  if (woke.length){ if (G.mode === 'explore') startCombat(woke); else if (G.mode === 'combat') joinCombat(woke); else if (G.mode === 'action') rtWake(woke); }
 }
 function revealSanctum(){
   if (G.revealed) return;
@@ -3298,6 +3332,7 @@ function defeat(){
     h('div', {class:'row'}, h('button', {class:'btn go', type:'button', onclick:() => { closeModal(); restart(); }}, 'Tentar de novo'))));
 }
 function restart(){
+  rtStop();
   const snap = G.units.filter(u => u.side === 'hero').map(u => Object.assign(serializeHero(u), {hp:null}));
   G.units.forEach(u => disposeObj(u.m.root));
   if (G.telegraph) G.telegraph.meshes.forEach(m => disposeObj(m));
@@ -3386,9 +3421,10 @@ function renderPhase(){
   const el = $('phase');
   if (G.mode === 'combat'){ el.textContent = `Combate · rodada ${G.round}`; el.className = 'phase combat'; }
   else if (G.mode === 'explore'){ el.textContent = `Exploração · ${MODES[mode()].n}`; el.className = 'phase'; }
+  else if (G.mode === 'action'){ el.textContent = RT.fight ? `Luta · ${MODES[mode()].n}` : `Ação · ${MODES[mode()].n}`; el.className = 'phase' + (RT.fight ? ' combat' : ''); }
   else el.textContent = 'Preparando a descida';
   $('btnGM').classList.toggle('on', UI.drawer === 'gm' || SET.gmView || SET.gmControl);
-  $('btnShop').disabled = G.mode !== 'explore';
+  $('btnShop').disabled = !(G.mode === 'explore' || (G.mode === 'action' && !RT.fight));
   $('btnOpts').classList.toggle('on', UI.drawer === 'opts');
   $('btnGM').hidden = isGuest();
   setNetStatus();
@@ -3398,9 +3434,9 @@ function renderInit(){
   const list = G.mode === 'combat' ? G.order.filter(u => u.alive) : G.units.filter(u => u.side === 'hero');
   for (const u of list){
     const f = clamp(u.hp/u.maxHp, 0, 1), showF = u.side === 'enemy' && !SET.gmView ? (f >= 1 ? 1 : f > .6 ? .75 : f > .25 ? .45 : .15) : f;
-    el.append(h('button', {type:'button', class:`chip ${u.side}${u === G.active ? ' act' : ''}${u.down ? ' down' : ''}`, onclick: () => { if (u.side === 'hero' && G.mode === 'explore'){ G.sel = u; renderHUD(); updatePreview(); } focusCamera(u); }},
+    el.append(h('button', {type:'button', class:`chip ${u.side}${u === G.active || (G.mode === 'action' && u === G.sel) ? ' act' : ''}${u.down ? ' down' : ''}`, onclick: () => { if (u.side === 'hero' && G.mode === 'action'){ if (!u.down) rtSwitch(u); return; } if (u.side === 'hero' && G.mode === 'explore'){ G.sel = u; renderHUD(); updatePreview(); } focusCamera(u); }},
       h('span', {class:'cn', text:u.name}),
-      h('span', {class:'ci', text: G.mode === 'combat' ? `Inic. ${Math.floor(u.init)}${u.down ? ' · caído' : ''}` : (u.down ? 'caído' : `${u.hp}/${u.maxHp} PV`)}),
+      h('span', {class:'ci', text: G.mode === 'action' && u === G.sel ? `você · ${u.hp}/${u.maxHp}` : G.mode === 'combat' ? `Inic. ${Math.floor(u.init)}${u.down ? ' · caído' : ''}` : (u.down ? 'caído' : `${u.hp}/${u.maxHp} PV`)}),
       h('span', {class:'mini'}, h('i', {style:`width:${showF*100}%`}))));
   }
 }
@@ -3413,6 +3449,7 @@ function econ(u){
 function renderHotbar(){
   queueMicrotask(renderHint);
   const el = $('hotbar'); el.replaceChildren();
+  if (G.mode === 'action'){ el.hidden = true; rtRenderPad(); return; }
   const u = controlledUnit();
   if (!u || G.mode === 'setup' || G.mode === 'over'){
     if (G.mode === 'combat' && G.active){ el.hidden = false; el.append(h('div', {class:'hb-who'}, h('b', {text:G.active.name}), h('small', {text: G.active.side === 'enemy' ? 'turno do inimigo' : 'aguarde'}))); }
@@ -3840,6 +3877,7 @@ function pickTile(ev){
 const stateStamp = () => G.units.map(u => u.alive ? u.c + ':' + u.r : 'x').join('|') + (G.revealed ? 'R' : '');
 function updatePreview(ev){
   clearHl();
+  if (G.mode === 'action') return;
   if (G.busy || G.mode === 'setup' || G.mode === 'over') return;
   const u = controlledUnit(), hv = G.hover;
   if (G.placing){ if (hv) hl(hv.c, hv.r, walkable(hv.c, hv.r) && !unitAt(hv.c, hv.r) ? 'ally' : 'warn'); return; }
@@ -3922,6 +3960,7 @@ function showAimTip(u, id, ab, hv, valid, tiles, ev, P){
   placeTip(ev, nodes);
 }
 function onTileClick(t){
+  if (G.mode === 'action'){ audioInit(); rtClick(t); return; }
   if (G.busy || !t) return;
   audioInit();
   if (G.placing){
@@ -3992,6 +4031,7 @@ function bindInput(){
     if (/^[1-9]$/.test(k) && u){ const id = abilityList(u)[+k - 1]; if (id) selectAbility(u, id); }
   });
   window.addEventListener('resize', resize);
+  rtBindJoystick();
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { UI.tab = t.dataset.tab; UI.editSheet = false; renderPane(); }));
   $('btnGM').addEventListener('click', () => openDrawer('gm'));
   $('btnOpts').addEventListener('click', () => openDrawer('opts'));
@@ -4053,6 +4093,386 @@ function openStatus(){
         'Modelos esculpidos no nível das miniaturas de referência dependem de arquivos 3D (.glb) externos; os atuais são gerados por código'])) ),
     h('button', {class:'btn go', type:'button', onclick:closeModal}, 'Voltar ao jogo')), true);
 }
+/* =====================================================================
+   MODO AÇÃO (tempo real): anda livre, ataca, esquiva no espaço
+   ===================================================================== */
+const RT = {keys:{}, joy:{x:0, z:0}, atkHeld:false, fight:false, hintT:0, calmT:0, bossT:6, slam:null, uiT:0, started:false};
+const RT_SKILLS = {
+  guerreiro:[{id:'giro', n:'Giro', key:'K', icon:'spin', cd:5}, {id:'investida', n:'Investida', key:'L', icon:'dash', cd:6}],
+  mago:[{id:'bola', n:'Bola de Fogo', key:'K', icon:'flame', cd:6}, {id:'raio', n:'Raio', key:'L', icon:'bolt', cd:3.5}],
+  paladino:[{id:'cura', n:'Cura', key:'K', icon:'heart', cd:9}, {id:'radiante', n:'Golpe Radiante', key:'L', icon:'sun', cd:4}],
+};
+const rtOn = () => G.mode === 'action';
+const rtDiff = () => ({facil:.55, normal:.8, dificil:1.1})[mode()] || .8;
+const rtLeader = () => G.sel && G.sel.side === 'hero' && G.sel.alive && !G.sel.down ? G.sel : null;
+const rtStanding = () => G.units.filter(u => u.side === 'hero' && u.alive && !u.down);
+const rtFoes = () => G.units.filter(u => u.side === 'enemy' && u.alive && !hidden(u));
+const wd = (a, b) => Math.hypot(a.wx - b.wx, a.wz - b.wz);
+function rtInit(u){ if (!u.rt) u.rt = {atk:0, dodge:0, inv:0, cd:{}, busy:0, wind:0, tell:0, think:0, stuck:0, lx:u.wx, lz:u.wz, path:null, potion:0}; return u.rt; }
+function rtTileOf(x, z){ return {c:Math.round(x / T + 6), r:Math.round(z / T + 11)}; }
+function rtFree(x, z){
+  const q = T * .3;
+  for (const [dx, dz] of [[0,0],[q,0],[-q,0],[0,q],[0,-q]]){ const t = rtTileOf(x + dx, z + dz); if (!walkable(t.c, t.r)) return false; }
+  return true;
+}
+// move com deslize nas paredes; devolve a distância andada
+function rtStep(u, dx, dz){
+  const x0 = u.wx, z0 = u.wz;
+  if (rtFree(u.wx + dx, u.wz + dz)){ u.wx += dx; u.wz += dz; }
+  else { if (dx && rtFree(u.wx + dx, u.wz)) u.wx += dx; if (dz && rtFree(u.wx, u.wz + dz)) u.wz += dz; }
+  const t = rtTileOf(u.wx, u.wz); u.c = t.c; u.r = t.r;
+  return Math.hypot(u.wx - x0, u.wz - z0);
+}
+function rtFace(u, x, z){ if (Math.abs(x - u.wx) + Math.abs(z - u.wz) > .01) u.facing = Math.atan2(x - u.wx, z - u.wz); }
+function rtWalkAnim(u, moving){
+  const R = u.rt; if (R.busy > 0 || u.down) return;
+  const n = u.anim && u.anim.name;
+  if (moving && n !== 'walk') setAnim(u, 'walk');
+  else if (!moving && n === 'walk') setAnim(u, 'idle');
+}
+function rtMoveToward(u, x, z, speed, dt){
+  const dx = x - u.wx, dz = z - u.wz, d = Math.hypot(dx, dz); if (d < .05) return 0;
+  const s = Math.min(d, speed * dt); rtFace(u, x, z);
+  return rtStep(u, dx / d * s, dz / d * s);
+}
+// quando a linha reta trava (pilar), segue o caminho em quadrados
+function rtChase(u, tgt, speed, dt){
+  const R = rtInit(u);
+  if (R.path && R.path.length){
+    const p = R.path[0], px = tx(p.c), pz = tz(p.r);
+    if (Math.hypot(px - u.wx, pz - u.wz) < T * .2) R.path.shift();
+    else { rtMoveToward(u, px, pz, speed, dt); return; }
+  }
+  const moved = rtMoveToward(u, tgt.wx, tgt.wz, speed, dt);
+  if (moved < speed * dt * .3){ R.stuck += dt; if (R.stuck > .35){ R.stuck = 0; const map = bfs(u, 30, {passAllies:true}); let best = null;
+    for (const n of map.values()){ if (n.d === 0) continue; const dd = Math.max(Math.abs(n.c - tgt.c), Math.abs(n.r - tgt.r)); if (!best || dd < best.dd || (dd === best.dd && n.d < best.n.d)) best = {n, dd}; }
+    if (best){ const path = pathFrom(map, best.n.c, best.n.r); R.path = path ? path.slice(0, 4) : null; } } }
+  else R.stuck = 0;
+}
+const rtBig = x => x.side === 'enemy' && !!(MONSTERS[x.kindKey] && MONSTERS[x.kindKey].big);
+function rtSeparate(dt){
+  const us = G.units.filter(u => u.alive && !u.down && !hidden(u));
+  for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++){
+    const a = us[i], b = us[j], d = wd(a, b), min = T * ((rtBig(a) || rtBig(b)) ? 1.05 : .72);
+    if (d > 0 && d < min){ const push = (min - d) * .5 * Math.min(1, dt * 12), nx = (a.wx - b.wx) / d, nz = (a.wz - b.wz) / d; rtStep(a, nx * push, nz * push); rtStep(b, -nx * push, -nz * push); }
+  }
+}
+function rtSkills(u){ return RT_SKILLS[u.clsKey] || []; }
+function rtSkillReady(u, i){ const s = rtSkills(u)[i]; return s && !(rtInit(u).cd[s.id] > 0); }
+
+/* ---------- ataques dos heróis ---------- */
+function rtProfile(u){
+  if (u.clsKey === 'mago' && (!mainItem(u) || !attackProfile(u, mainItem(u)).ranged)) return {bolt:true, ranged:true, range:7 * T, dice:'1d10', attr:'INT', type:'forca', cd:.7, name:'Seta arcana'};
+  const P = attackProfile(u, mainItem(u));
+  const heavy = P.def && P.def.props && (P.def.props.pesada || P.def.props.duas);
+  return Object.assign({}, P, {range: P.ranged ? Math.max(4, P.normal || 4) * T : ((P.reach || 1) + .65) * T, cd: P.ranged ? .8 : heavy ? .75 : .5});
+}
+function rtPickTarget(u, range, aim){
+  let best = null, bs = 1e9; const f = aim ? Math.atan2(aim.x - u.wx, aim.z - u.wz) : u.facing;
+  for (const e of rtFoes()){
+    const d = wd(u, e); if (d > range) continue;
+    let da = Math.atan2(e.wx - u.wx, e.wz - u.wz) - f; while (da > Math.PI) da -= Math.PI*2; while (da < -Math.PI) da += Math.PI*2;
+    const s = d + Math.abs(da) * T * 1.2 + (e.awake ? 0 : T); if (s < bs){ bs = s; best = e; }
+  }
+  return best;
+}
+function rtDamageRoll(u, dice, attr){
+  let n = rollDamage(dice).total + Math.max(0, attr ? modOf(u, attr) : 0);
+  const crit = Math.random() < .1; if (crit) n *= 2;
+  return {n:Math.max(1, Math.round(n)), crit};
+}
+async function rtHit(u, e, dice, attr, type, opts={}){
+  if (!e.alive || e.down) return;
+  if (e.side === 'enemy' && !e.awake){ e.awake = true; checkTriggers(); }
+  if (e.side === 'hero' && rtInit(e).inv > 0){ floatText(unitPos(e, e.m.height + .3), 'Esquivou!', '#bfe6ff'); return; }
+  const D = rtDamageRoll(u, dice, attr), amt = Math.round(D.n * (opts.mul || 1));
+  if (D.crit){ floatText(unitPos(e, e.m.height + .7), 'CRÍTICO', '#ffd27a', true); camShake(.25); }
+  impactSparks(unitPos(e, 'chest'), opts.color || 0xffe0a0); sfx(opts.sfx || 'hit');
+  await damage(e, amt, {type, src:u});
+  if (e.alive && !e.down && opts.knock !== 0){ const d = wd(u, e) || 1, k = (opts.knock || .22) * T; rtStep(e, (e.wx - u.wx) / d * k, (e.wz - u.wz) / d * k); }
+  if (!e.alive && e.side === 'enemy') camShake(.18);
+}
+function rtAttack(u, aim){
+  const R = rtInit(u); if (R.atk > 0 || R.busy > 0 || u.down) return;
+  const P = rtProfile(u); R.atk = P.cd * (u === rtLeader() ? 1 : 1.6);
+  const t = rtPickTarget(u, P.range + (P.ranged ? 0 : T * .4), aim);
+  if (t) rtFace(u, t.wx, t.wz); else if (aim) rtFace(u, aim.x, aim.z);
+  const anim = playAnim(u, P.bolt ? 'cast' : P.ranged ? 'shoot' : 'attack'); R.busy = P.bolt ? .55 : P.ranged ? .6 : .42;
+  sfx(P.bolt ? 'arcane' : P.ranged ? 'bow' : 'swing');
+  (async () => {
+    await anim.impact;
+    if (P.ranged){
+      if (!t) return;
+      await missile(handPos(u), unitPos(t, 'chest'), {color:P.bolt ? 0x8fd0ff : 0xffe0a0, speed:24, size:P.bolt ? .35 : .22});
+      await rtHit(u, t, P.dice, P.attr, P.type, {color:P.bolt ? 0x8fd0ff : 0xffe0a0, sfx:P.bolt ? 'zap' : 'hit'});
+    } else {
+      slashTrail(u, {dur:.22});
+      const hit = t && wd(u, t) <= P.range + T * .55 ? t : null;
+      if (hit) await rtHit(u, hit, P.dice, P.attr, P.type); else sfx('miss');
+    }
+  })();
+}
+async function rtSkill(u, i, aim){
+  const S = rtSkills(u)[i], R = rtInit(u); if (!S || R.cd[S.id] > 0 || R.busy > 0 || u.down) return;
+  R.cd[S.id] = S.cd; const P = rtProfile(u);
+  if (S.id === 'giro'){
+    const a = playAnim(u, 'spin'); R.busy = .6; sfx('swing'); await a.impact;
+    slashTrail(u, {full:true, radius:1.6, dur:.35}); camShake(.15);
+    for (const e of rtFoes()) if (wd(u, e) <= T * 1.9) rtHit(u, e, P.dice || '1d8', P.attr || 'FOR', P.type, {knock:.6});
+  } else if (S.id === 'investida'){
+    const f = u.facing, dist0 = T * 3.6; R.inv = .45; R.busy = .3; setAnim(u, 'attack'); sfx('blink');
+    const hitSet = new Set(); let gone = 0;
+    await tween(.26, q => { const step = dist0 * q - gone; gone += rtStep(u, Math.sin(f) * step, Math.cos(f) * step) > 0 ? step : 0;
+      burst({pos:unitPos(u, .6), n:3, color:0xffd27a, speed:.5, life:.35});
+      for (const e of rtFoes()) if (!hitSet.has(e) && wd(u, e) < T * 1.1){ hitSet.add(e); rtHit(u, e, P.dice || '1d8', P.attr || 'FOR', P.type, {mul:1.3, knock:.8}); } });
+  } else if (S.id === 'bola'){
+    const t = rtPickTarget(u, T * 9, aim); const pt = t ? new THREE.Vector3(t.wx, .3, t.wz) : aim ? new THREE.Vector3(aim.x, .3, aim.z) : new THREE.Vector3(u.wx + Math.sin(u.facing) * T * 4, .3, u.wz + Math.cos(u.facing) * T * 4);
+    rtFace(u, pt.x, pt.z); const a = playAnim(u, 'cast'); R.busy = .6; sfx('fire'); await a.impact;
+    await projectile(handPos(u), pt, {color:0xff8a3d, size:.55, speed:16, arc:1.2}); explosion(pt, T * 1.7); sfx('boom'); camShake(.3);
+    for (const e of rtFoes()) if (Math.hypot(e.wx - pt.x, e.wz - pt.z) <= T * 1.8) rtHit(u, e, '3d6', null, 'fogo', {color:0xff8a3d, knock:.5});
+  } else if (S.id === 'raio'){
+    const t = rtPickTarget(u, T * 7, aim); if (!t){ R.cd[S.id] = .3; toast('Nenhum inimigo perto.'); return; }
+    rtFace(u, t.wx, t.wz); const a = playAnim(u, 'cast'); R.busy = .5; sfx('zap'); await a.impact;
+    let from = handPos(u), cur = t; const done = new Set();
+    for (let k = 0; k < 3 && cur; k++){ done.add(cur); lightning(from, unitPos(cur, 'chest')); rtHit(u, cur, '2d8', null, 'raio', {color:0x9fdcff, sfx:'zap', mul:k ? .6 : 1});
+      from = unitPos(cur, 'chest'); cur = rtFoes().filter(e => !done.has(e) && wd(e, t) < T * 2.8).sort((a2, b2) => wd(a2, t) - wd(b2, t))[0]; }
+  } else if (S.id === 'cura'){
+    const allies = G.units.filter(x => x.side === 'hero' && x.alive && wd(u, x) <= T * 7);
+    const t = allies.sort((a2, b2) => (a2.down ? -1 : a2.hp / a2.maxHp) - (b2.down ? -1 : b2.hp / b2.maxHp))[0] || u;
+    const a = playAnim(u, 'cast'); R.busy = .6; await a.impact; sfx('holy');
+    const n = rollDamage('2d8').total + Math.max(1, modOf(u, 'CAR'), modOf(u, 'SAB'));
+    if (t.down){ t.down = false; t.hp = 0; setAnim(t, 'rise'); }
+    pillarOfLight(unitPos(t, 0)); healFx(t); heal(t, n); logMsg(`${u.name} cura ${t.name}: +${n} PV.`, 'heal');
+  } else if (S.id === 'radiante'){
+    const t = rtPickTarget(u, P.range + T * .4, aim); if (t) rtFace(u, t.wx, t.wz);
+    const a = playAnim(u, 'attack'); R.busy = .45; await a.impact; sfx('holy');
+    if (t && wd(u, t) <= P.range + T * .6){ pillarOfLight(unitPos(t, 0)); rtHit(u, t, '2d8', 'CAR', 'rad', {color:0xffe08a, mul:1}); rtHit(u, t, P.dice || '1d8', P.attr || 'FOR', P.type, {knock:0}); }
+    else sfx('miss');
+  }
+  rtRenderPad();
+}
+function rtDodge(u){
+  const R = rtInit(u); if (R.dodge > 0 || u.down) return;
+  let dx = RT.joy.x, dz = RT.joy.z;
+  if (Math.hypot(dx, dz) < .2){ dx = Math.sin(u.facing); dz = Math.cos(u.facing); }
+  const l = Math.hypot(dx, dz); dx /= l; dz /= l;
+  R.dodge = .75; R.inv = .42; R.busy = .28; R.wind = 0; if (u === rtLeader() && RT.fight && !RT.dodged){ RT.dodged = true; renderHint(); }
+  u.facing = Math.atan2(dx, dz); setAnim(u, 'spin'); sfx('blink');
+  const D = T * 2.6; let q0 = 0;
+  burst({pos:unitPos(u, .5), n:24, color:0xbfe6ff, speed:1.6, life:.45});
+  tween(.24, q => { const e = 1 - (1 - q) * (1 - q), s = (e - q0) * D; q0 = e; rtStep(u, dx * s, dz * s); u.m.root.position.y = Math.sin(q * Math.PI) * .35; burst({pos:unitPos(u, .6), n:2, color:0xbfe6ff, speed:.3, life:.3}); })
+    .then(() => { u.m.root.position.y = 0; if (u.anim && u.anim.name === 'spin') setAnim(u, 'idle'); });
+}
+function rtPotion(u){
+  const R = rtInit(u); if (R.potion > 0 || u.down) return;
+  if (!(u.items?.pocao > 0)) return toast('Sem poções. O mascate vende.');
+  if (u.hp >= u.maxHp) return toast('A vida já está cheia.');
+  R.potion = 1.5; R.busy = .6; doPotion(u).then(rtRenderPad);
+}
+function rtSwitch(to){
+  const st = rtStanding(); if (!st.length) return;
+  const cur = rtLeader(); const next = to || st[(st.indexOf(cur) + 1) % st.length];
+  if (!next || next === cur) return;
+  G.sel = next; floatText(unitPos(next, next.m.height + .4), 'Você', '#ffd27a'); renderHUD();
+}
+
+/* ---------- inimigos ---------- */
+function rtTellRing(e){
+  if (!e.rtRing){
+    const big = MONSTERS[e.kindKey].big;
+    e.rtRing = new THREE.Mesh(new THREE.RingGeometry(T * (big ? .85 : .5), T * (big ? 1.05 : .66), 32), new THREE.MeshBasicMaterial({color:0xff3a2a, transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide}));
+    e.rtRing.rotation.x = -Math.PI / 2; scene.add(e.rtRing);
+  }
+  return e.rtRing;
+}
+function rtEnemy(e, dt){
+  const R = rtInit(e), M = MONSTERS[e.kindKey]; if (!M) return; const ring = rtTellRing(e);
+  ring.position.set(e.wx, .06, e.wz);
+  if (!e.alive || hidden(e) || !e.awake){ ring.material.opacity = 0; return; }
+  const heroes = rtStanding(); if (!heroes.length){ ring.material.opacity = 0; rtWalkAnim(e, false); return; }
+  let tgt = R.tgt && R.tgt.alive && !R.tgt.down ? R.tgt : null;
+  if (!tgt || (R.think -= dt) <= 0){ R.think = .8; tgt = heroes.slice().sort((a, b) => wd(e, a) - wd(e, b))[0]; R.tgt = tgt; }
+  const reach = T * (M.big ? 1.85 : 1.3), d = wd(e, tgt);
+  R.cd -= dt;
+  if (R.tell > 0){
+    R.tell -= dt; ring.material.opacity = .35 + .5 * Math.abs(Math.sin(performance.now() / 70)); rtFace(e, tgt.wx, tgt.wz);
+    if (R.tell <= 0){
+      const a = playAnim(e, 'attack'); R.busy = .5; sfx(M.sound === 'spider' ? 'spider' : 'swing');
+      a.impact.then(() => {
+        ring.material.opacity = 0;
+        if (!e.alive || e.down) return;
+        if (tgt.alive && !tgt.down && wd(e, tgt) <= reach + T * .5){
+          if (rtInit(tgt).inv > 0){ floatText(unitPos(tgt, tgt.m.height + .3), 'Esquivou!', '#bfe6ff'); sfx('miss'); return; }
+          const n = Math.max(1, Math.round(rollDamage(M.dice).total * rtDiff() + (e.enraged ? 2 : 0)));
+          impactSparks(unitPos(tgt, 'chest'), 0xff6b5a); sfx('hit'); damage(tgt, n, {type:M.type, src:e});
+          if (tgt === rtLeader()) camShake(.2);
+          if (M.poison && Math.random() < .3) applyCond(tgt, 'envenenado', 2, {dc:M.poison.dc});
+        } else sfx('miss');
+      });
+      R.cd = (M.boss ? 1.25 : 1.4) + Math.random() * .6;
+    }
+    return;
+  }
+  ring.material.opacity = 0;
+  if (R.busy > 0) return;
+  if (M.boss && (RT.bossT -= dt) <= 0 && d < T * 4){ RT.bossT = 7 + Math.random() * 3; rtBossSlam(e); return; }
+  if (d > reach * .92){ rtChase(e, tgt, M.speed * T * .58, dt); rtWalkAnim(e, true); return; }
+  rtWalkAnim(e, false); rtFace(e, tgt.wx, tgt.wz);
+  if (R.cd <= 0) R.tell = (M.boss ? .55 : .42) + (mode() === 'facil' ? .15 : 0);
+}
+function rtBossSlam(e){
+  const R = rtInit(e); R.busy = 1.6; setAnim(e, 'roar'); sfx('roar');
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(T * 2.7, 40), new THREE.MeshBasicMaterial({color:0xb44cff, transparent:true, opacity:.15, depthWrite:false, blending:THREE.AdditiveBlending}));
+  disc.rotation.x = -Math.PI / 2; disc.position.set(e.wx, .07, e.wz); scene.add(disc); disc.scale.setScalar(.2);
+  floatText(unitPos(e, e.m.height + .8), 'Saia de perto!', '#e7b6ff', true);
+  let t = 0;
+  addFx(dt => { t += dt; disc.scale.setScalar(Math.min(1, .2 + t / 1.1)); disc.material.opacity = .15 + .35 * Math.abs(Math.sin(t * 9));
+    if (t >= 1.15){
+      disposeObj(disc); if (!e.alive) return false;
+      const a = playAnim(e, 'attack'); explosion(new THREE.Vector3(e.wx, .3, e.wz), T * 2.6, 0xb44cff); sfx('rift'); camShake(.45);
+      for (const hh of rtStanding()) if (Math.hypot(hh.wx - e.wx, hh.wz - e.wz) <= T * 2.7){
+        if (rtInit(hh).inv > 0){ floatText(unitPos(hh, hh.m.height + .3), 'Esquivou!', '#bfe6ff'); continue; }
+        damage(hh, Math.round(rollDamage('2d8+4').total * rtDiff()), {type:'necr', src:e});
+      }
+      return false;
+    } });
+}
+
+/* ---------- companheiros ---------- */
+function rtCompanion(u, L, dt){
+  const R = rtInit(u);
+  if (R.busy > 0) return;
+  const P = rtProfile(u);
+  const foes = rtFoes().filter(e => e.awake && wd(L, e) < T * 7);
+  if (u.clsKey === 'paladino' && rtSkillReady(u, 0)){ const hurt = G.units.find(x => x.side === 'hero' && x.alive && (x.down || x.hp / x.maxHp < .4) && wd(u, x) < T * 6); if (hurt){ rtSkill(u, 0); return; } }
+  if (foes.length){
+    const t = foes.sort((a, b) => wd(u, a) - wd(u, b))[0], d = wd(u, t);
+    // foge do golpe que vem
+    if (rtInit(t).tell > 0 && rtInit(t).tgt === u && d < T * 1.6 && R.dodge <= 0 && Math.random() < .5 * dt * 10){ rtDodge(u); return; }
+    if (P.ranged){
+      if (d < T * 2.2){ const dx = u.wx - t.wx, dz = u.wz - t.wz, l = Math.hypot(dx, dz) || 1; rtStep(u, dx / l * T * 2.4 * dt, dz / l * T * 2.4 * dt); rtWalkAnim(u, true); }
+      else if (d > P.range * .9){ rtChase(u, t, T * 3.6, dt); rtWalkAnim(u, true); }
+      else { rtWalkAnim(u, false); if (rtSkillReady(u, 1) && Math.random() < .02) rtSkill(u, 1); else if (rtSkillReady(u, 0) && foes.length > 1 && Math.random() < .015) rtSkill(u, 0); else rtAttack(u); }
+    } else {
+      if (d > P.range * .9){ rtChase(u, t, T * 3.8, dt); rtWalkAnim(u, true); }
+      else { rtWalkAnim(u, false); rtFace(u, t.wx, t.wz); if (u.clsKey === 'guerreiro' && rtSkillReady(u, 0) && foes.filter(e => wd(u, e) < T * 1.9).length > 1) rtSkill(u, 0); else if (u.clsKey === 'paladino' && rtSkillReady(u, 1) && Math.random() < .03) rtSkill(u, 1); else rtAttack(u); }
+    }
+    return;
+  }
+  const d = wd(u, L);
+  if (d > T * 2.2){ rtChase(u, L, T * 4.6 * (d > T * 5 ? 1.4 : 1), dt); rtWalkAnim(u, true); } else rtWalkAnim(u, false);
+}
+
+/* ---------- laço principal ---------- */
+function rtUpdate(dt){
+  if (!rtOn() || !$('overlay').hidden) return;
+  for (const u of G.units){ const R = rtInit(u); R.atk -= dt; R.dodge -= dt; R.inv -= dt; R.busy -= dt; R.potion -= dt; for (const k in R.cd) R.cd[k] -= dt; }
+  let L = rtLeader();
+  if (!L){ const st = rtStanding(); if (st.length){ G.sel = st[0]; L = st[0]; renderHUD(); } else return; }
+  // jogador
+  let ix = 0, iz = 0; const K = RT.keys;
+  if (K.w || K.arrowup) iz -= 1; if (K.s || K.arrowdown) iz += 1; if (K.a || K.arrowleft) ix -= 1; if (K.d || K.arrowright) ix += 1;
+  ix += RT.joy.x; iz += RT.joy.z;
+  const il = Math.hypot(ix, iz);
+  if (il > .15 && rtInit(L).busy <= 0 + .1){
+    const nx = ix / Math.max(1, il), nz = iz / Math.max(1, il);
+    const fx = -Math.sin(CAM.az), fz = -Math.cos(CAM.az), rx = Math.cos(CAM.az), rz = -Math.sin(CAM.az);
+    const wx = rx * nx - fx * nz, wz = rz * nx - fz * nz; const sp = T * (4.6 + (speedInfo(L).total - 5) * .25) * Math.min(1, il);
+    RT.dir = {x:wx, z:wz};
+    if (rtInit(L).busy <= 0){ rtStep(L, wx * sp * dt, wz * sp * dt); L.facing = Math.atan2(wx, wz); rtWalkAnim(L, true); }
+  } else { RT.dir = null; rtWalkAnim(L, false); }
+  if (RT.atkHeld) rtAttack(L);
+  // câmera atrás do líder
+  CAM.want.set(L.wx, 0, L.wz);
+  // outros
+  for (const u of G.units){
+    if (u.side === 'hero' && u !== L && u.alive && !u.down) rtCompanion(u, L, dt);
+    else if (u.side === 'enemy') rtEnemy(u, dt);
+  }
+  rtSeparate(dt);
+  // gatilhos: acordar inimigos, revelar santuário
+  const tl = L.c + ':' + L.r; if (tl !== RT.lastTile){ RT.lastTile = tl; checkTriggers(); }
+  const fighting = rtFoes().some(e => e.awake);
+  if (fighting) RT.calmT = 0;
+  else {
+    RT.calmT += dt;
+    if (RT.calmT > 2.5) for (const u of G.units) if (u.side === 'hero' && u.alive){
+      if (u.down){ u.down = false; u.hp = Math.max(1, Math.round(u.maxHp * .25)); setAnim(u, 'rise'); logMsg(`${u.name} se levanta.`, 'heal'); drawHpBar(u); renderHUD(); }
+      else if (u.hp < u.maxHp && (RT.regen = (RT.regen || 0) + dt) > 1.2){ RT.regen = 0; G.units.filter(x => x.side === 'hero' && x.alive && !x.down && x.hp < x.maxHp).forEach(x => { x.hp++; drawHpBar(x); }); }
+    }
+  }
+  if (fighting !== RT.fight){ RT.fight = fighting; rtRenderPad(); renderPhase(); renderHint(); $('btnShop').disabled = fighting; }
+  if ((RT.uiT -= dt) <= 0){ RT.uiT = .12; rtCooldownUi(L); }
+}
+function rtWake(woke){
+  woke.forEach(w => { rtInit(w).cd = .6 + Math.random() * .6; setAnim(w, 'roar'); });
+  if (MONSTERS[woke[0].kindKey].sound === 'roar') sfx('roar');
+  if (!RT.started){ RT.started = true; if (mode() !== 'dificil') banner('Inimigos!', TOUCH ? 'Botão grande ataca. Esquiva desvia quando o anel vermelho piscar.' : 'J ou clique ataca · Espaço esquiva quando o anel vermelho piscar'); }
+  logMsg(`${woke.map(w => w.name).join(', ')} ${woke.length > 1 ? 'atacam' : 'ataca'}!`, 'sys');
+}
+function rtStart(){
+  G.mode = 'action'; RT.started = false; RT.calmT = 0; RT.bossT = 6; RT.keys = {}; RT.joy = {x:0, z:0};
+  G.units.forEach(u => { u.rt = null; rtInit(u); });
+  CAM.wantRad = TOUCH ? 15 : 14; CAM.wantPol = .5;
+  if (UI.sideOpen){ UI.sideOpen = false; $('side').hidden = true; $('btnSide').classList.remove('on'); }
+  $('hotbar').hidden = true; $('rtPad').hidden = false; $('rtJoy').hidden = !TOUCH;
+  rtRenderPad(); renderHUD();
+}
+function rtStop(){ $('rtPad').hidden = true; $('rtJoy').hidden = true; G.units.forEach(u => { if (u.rtRing){ disposeObj(u.rtRing); u.rtRing = null; } }); }
+
+/* ---------- controles na tela ---------- */
+function rtRenderPad(){
+  const el = $('rtPad'); if (!el || !rtOn()) return;
+  const L = rtLeader(); el.replaceChildren(); if (!L) return;
+  const btn = (cls, icon, label, key, fn, extra) => { const ic = document.createElement('span'); ic.className = 'ri'; ic.innerHTML = svgIcon(icon);
+    const b = h('button', {class:'rtb ' + cls, type:'button', 'aria-label':label}, ic, h('span', {class:'rl', text:label}), key && !TOUCH ? h('kbd', {text:key}) : null, h('i', {class:'rcd'}), extra || null);
+    b.addEventListener('pointerdown', e => { e.preventDefault(); audioInit(); fn(true); }); b.addEventListener('pointerup', () => fn(false)); b.addEventListener('pointerleave', () => fn(false)); b.addEventListener('contextmenu', e => e.preventDefault()); return b; };
+  const sk = rtSkills(L);
+  const P = rtProfile(L);
+  el.append(
+    h('div', {class:'rt-who'}, h('b', {text:L.name.split(' ')[0]}), h('small', {text:`${L.hp}/${L.maxHp} PV`})),
+    btn('swap', 'swap', 'Trocar', 'Tab', d => d && rtSwitch()),
+    btn('pot', 'potion', `Poção ${L.items?.pocao || 0}`, 'Q', d => d && rtPotion(rtLeader())),
+    ...sk.map((s, i) => btn('sk sk' + i, s.icon, s.n, s.key, d => d && rtSkill(rtLeader(), i, null))).map((b, i) => { b.dataset.sk = sk[i].id; return b; }),
+    btn('dodge', 'blink', 'Esquiva', 'Espaço', d => d && rtDodge(rtLeader())),
+    btn('atk', P.bolt ? 'spark' : P.ranged ? 'bow' : 'sword', 'Atacar', 'J', d => { RT.atkHeld = d; if (d) rtAttack(rtLeader()); }));
+  rtCooldownUi(L);
+}
+function rtCooldownUi(L){
+  const el = $('rtPad'); if (!el || el.hidden || !L) return;
+  const R = rtInit(L);
+  const set = (sel, left, total) => { const b = el.querySelector(sel); if (!b) return; const f = Math.max(0, left) / total; b.style.setProperty('--cd', f.toFixed(3)); b.classList.toggle('cool', f > 0); };
+  set('.dodge', R.dodge, .75); set('.pot', R.potion, 1.5);
+  rtSkills(L).forEach((s, i) => set('.sk' + i, R.cd[s.id] || 0, s.cd));
+  const who = el.querySelector('.rt-who small'); if (who) who.textContent = `${L.hp}/${L.maxHp} PV`;
+}
+function rtBindJoystick(){
+  const pad = $('rtJoy'), knob = pad.querySelector('i'); let id = null, cx = 0, cy = 0;
+  const R0 = 46;
+  pad.addEventListener('pointerdown', e => { e.preventDefault(); audioInit(); id = e.pointerId; pad.setPointerCapture(id); const r = pad.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; move(e); });
+  const move = e => { if (e.pointerId !== id) return; let dx = e.clientX - cx, dy = e.clientY - cy; const l = Math.hypot(dx, dy); if (l > R0){ dx = dx / l * R0; dy = dy / l * R0; } knob.style.transform = `translate(${dx}px,${dy}px)`; RT.joy = {x:dx / R0, z:dy / R0}; };
+  const end = e => { if (e.pointerId !== id) return; id = null; RT.joy = {x:0, z:0}; knob.style.transform = ''; };
+  pad.addEventListener('pointermove', move); pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
+}
+function rtKey(e, down){
+  if (!rtOn() || !$('overlay').hidden) return;
+  if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase(), L = rtLeader();
+  if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){ RT.keys[k] = down; e.preventDefault(); e.stopImmediatePropagation(); return; }
+  if (!down){ if (k === 'j') RT.atkHeld = false; return; }
+  if (e.repeat && k !== 'j') { e.preventDefault(); e.stopImmediatePropagation(); return; }
+  const act = {' ':() => rtDodge(L), shift:() => rtDodge(L), j:() => { RT.atkHeld = true; rtAttack(L); }, k:() => rtSkill(L, 0), l:() => rtSkill(L, 1), '1':() => rtSkill(L, 0), '2':() => rtSkill(L, 1), q:() => rtPotion(L), tab:() => rtSwitch()}[k];
+  if (act && L){ e.preventDefault(); e.stopImmediatePropagation(); act(); }
+}
+function rtClick(t, ev){
+  const L = rtLeader(); if (!L || !t) return;
+  const occ = unitAt(t.c, t.r);
+  if (occ && occ.side === 'hero' && occ !== L && !occ.down){ rtSwitch(occ); return; }
+  rtAttack(L, {x:tx(t.c), z:tz(t.r)});
+}
+window.addEventListener('keydown', e => rtKey(e, true), true);
+window.addEventListener('keyup', e => rtKey(e, false), true);
+window.addEventListener('blur', () => { RT.keys = {}; RT.atkHeld = false; });
 /* =====================================================================
    CONTROLES FÁCEIS: tocar no inimigo ataca, grupo segue, turno acaba sozinho
    ===================================================================== */
@@ -4167,7 +4587,8 @@ function tutTabs(){
 function tutOnline(){
   return `<div class="tut-mock"><div class="tut-code">ABC123</div><div class="tut-pips"><span><b>♛</b> Mestre cria a sala</span><span><b>➜</b> amigos entram com o código</span></div></div>`;
 }
-const TUT_STEPS = () => [
+const TUT_STEPS = () => SET.play === 'turnos' ? TUT_TURNOS() : TUT_ACAO();
+const TUT_TURNOS = () => [
   {art:tutEmblem, eyebrow:'Bem-vindo', title:'Ecos do Abismo', text:'Um RPG de mesa no navegador. Você comanda três heróis numa cripta escura. A meta: atravessar a ponte sobre o abismo e chegar ao santuário vivo.', tips:['Não precisa saber nada de RPG.', 'O jogo faz todas as contas pra você.', 'Leva uns 2 minutos pra aprender.']},
   {art:tutGrid, eyebrow:'Passo 1 · Andar', title:'Toque no chão pra andar', text:`${TAP} num quadrado e o herói vai até lá. Fora do combate, o grupo todo acompanha. No combate, os quadrados azuis mostram até onde ele chega.`, tips: TOUCH ? ['Arraste com um dedo pra girar a câmera.', 'Pinça com dois dedos pra aproximar.', 'Os nomes no topo escolhem outro herói.'] : ['Arraste o mouse pra girar a câmera.', 'Roda do mouse aproxima. WASD desliza.', 'Botão direito cancela o que estiver mirando.']},
   {art:tutChips, eyebrow:'Passo 2 · Turnos', title:'Cada um na sua vez', text:'Quando um inimigo vê vocês, começa o combate. A fila no topo mostra de quem é a vez. A carta com brilho dourado é quem joga agora.', tips:['No seu turno: andar e atacar. Pronto.', 'A reação é automática: golpe em quem foge de perto.', 'Inimigos jogam sozinhos. É só esperar.']},
@@ -4177,6 +4598,28 @@ const TUT_STEPS = () => [
   {art:tutOnline, eyebrow:'Passo 6 · Com amigos', title:'Jogue online', text:'Quer jogar junto? Um vira Mestre e cria a sala. Ele recebe um código de 6 letras. Os outros entram com o código e escolhem um herói.', tips:['Cada um joga do próprio celular ou PC.', 'O Mestre controla os monstros e a mesa.', 'Dá pra voltar depois com o mesmo código.']},
   {art:tutEmblem, eyebrow:'Pronto', title:'Hora de descer', text:'Explore com calma, junte o grupo antes de lutar e use poções quando a vida ficar vermelha. Dicas aparecem no topo da tela enquanto você joga.', tips:['Modo Fácil ajuda em tudo. Normal e Difícil tiram a ajuda.', 'Esqueceu algo? Botão Tutorial no topo.', 'Seu grupo fica salvo neste aparelho.']},
 ];
+
+function tutPad(){
+  const b = (cls, ic, n) => `<span class="rtb ${cls}" style="position:relative"><span class="ri">${svgIcon(ic)}</span><span class="rl">${n}</span></span>`;
+  return `<div class="tut-mock"><div class="tut-row" style="align-items:flex-end">${b('sk0', 'spin', 'Giro')}${b('dodge', 'blink', 'Esquiva')}${b('atk', 'sword', 'Atacar')}</div></div>`;
+}
+function tutDodge(){
+  return `<svg viewBox="0 0 280 150" class="tut-svg" aria-hidden="true">
+    <circle cx="150" cy="78" r="30" fill="none" stroke="#ff3a2a" stroke-width="5"><animate attributeName="stroke-opacity" values="1;.2;1" dur=".5s" repeatCount="indefinite"/></circle>
+    <circle cx="150" cy="78" r="13" fill="#e2523f"/><text x="150" y="40" font-size="11" text-anchor="middle" fill="#ffb3a8" font-family="monospace">VAI ATACAR</text>
+    <circle cx="95" cy="88" r="11" fill="#6fd08c" opacity=".35"/><circle cx="62" cy="98" r="11" fill="#6fd08c"/><circle cx="62" cy="98" r="16" fill="none" stroke="#e0bc72" stroke-width="2.5"/>
+    <path d="M110 88 Q90 80 78 94" fill="none" stroke="#bfe6ff" stroke-width="2.5" stroke-dasharray="4 4"/>
+    <rect x="178" y="104" width="86" height="28" rx="6" fill="#101b2f" stroke="#5cc6ff"/><text x="221" y="123" font-size="13" text-anchor="middle" fill="#bfe6ff" font-family="monospace">${TOUCH ? 'ESQUIVA' : 'ESPAÇO'}</text></svg>`;
+}
+const TUT_ACAO = () => { const T0 = TUT_TURNOS(); return [
+  Object.assign({}, T0[0], {text:'Um jogo de ação no navegador. Você controla um herói e os outros dois lutam do seu lado. A meta: atravessar a ponte sobre o abismo e vencer o Arauto no santuário.'}),
+  {art:tutGrid, eyebrow:'Passo 1 · Andar', title: TOUCH ? 'Círculo da esquerda' : 'WASD ou setas', text: TOUCH ? 'Arraste o círculo no canto esquerdo pra andar. O grupo vai junto.' : 'Ande com WASD ou com as setas. O grupo vai junto. Arraste o mouse pra girar a câmera.', tips:['Chegou perto de inimigo? Ele acorda e vem.', 'Fora da luta, a vida volta aos poucos.', TOUCH ? 'Toque no nome de outro herói (no topo) pra jogar com ele.' : 'Tab troca de herói. Clique no nome no topo também.']},
+  {art:tutPad, eyebrow:'Passo 2 · Atacar', title:'Bata no inimigo', text: TOUCH ? 'Segure o botão dourado pra atacar sem parar. O herói mira no inimigo mais perto.' : 'Aperte J ou clique na tela pra atacar. Segurar J ataca sem parar. A mira vai no inimigo mais perto.', tips:['Mago atira de longe. Guerreiro e paladino batem de perto.', '10% de chance de crítico: dano em dobro.', TOUCH ? 'Os botões ao lado são golpes especiais.' : 'K e L são golpes especiais. Q bebe poção.']},
+  {art:tutDodge, eyebrow:'Passo 3 · Esquivar', title:'Anel vermelho = esquiva', text:`Antes de atacar, o inimigo pisca um anel vermelho no chão. ${TOUCH ? 'Toque em Esquiva' : 'Aperte Espaço'} nessa hora: o herói rola pro lado e fica intocável por um instante.`, tips:['Esquiva tem uma recarga curta. Não gaste à toa.', 'O chefe enche o chão de roxo: saia de perto!', 'Esquive pra onde você está andando.']},
+  T0[5],
+  Object.assign({}, T0[6], {text:'Quer jogar junto? Um vira Mestre e cria a sala, recebe um código de 6 letras e os outros entram com ele. O online usa o estilo Tática, por turnos.'}),
+  Object.assign({}, T0[7], {text:'Fique de olho nos anéis vermelhos, use os golpes especiais em grupos e beba poção quando a vida ficar baixa.', tips:['Estilo Tática (por turnos) fica na tela inicial.', 'Esqueceu algo? Botão Tutorial no topo.', 'Seu grupo fica salvo neste aparelho.']}),
+]; };
 function openTutorial(first){
   const steps = TUT_STEPS(); let i = 0, x0 = null;
   const finish = () => { SET.tutSeen = true; saveSet(); if (first || G.mode === 'setup') openStart(); else closeModal(); };
@@ -4205,8 +4648,14 @@ function openTutorial(first){
 }
 /* Dica contextual no topo: diz o que fazer agora */
 function hintText(){
+  if (isGuest() && NET.room && !NET.players.some(p => p.pid === NET.room.host && p.online)) return {t:'O Mestre saiu da sala.', s:'Espere ele voltar. A mesa roda no aparelho dele.', cls:'enemy'};
+  if (isHost() && NET.code && document.hidden === false && NET.players.length > 1 && !hintText.warned){ hintText.warned = true; toast('Você é o Mestre: deixe esta tela aberta, senão a mesa para pra todos.'); }
   if (!SET.hints || mode() === 'dificil' || G.mode === 'setup' || G.mode === 'over') return null;
   const u = controlledUnit();
+  if (G.mode === 'action'){
+    if (RT.fight) return mode() === 'facil' && !RT.dodged ? {t: TOUCH ? 'Anel vermelho piscou? Toque em Esquiva!' : 'Anel vermelho piscou? Espaço pra esquivar!', s: TOUCH ? 'Botão grande ataca. Os botões do lado são golpes especiais.' : 'J ou clique ataca · K e L golpes especiais · Q poção', cls:'turn', k:'rtfight'} : null;
+    return mode() === 'facil' ? {t: TOUCH ? 'Use o círculo da esquerda pra andar.' : 'WASD ou setas pra andar. Mouse gira a câmera.', s:'Os outros heróis seguem e lutam sozinhos. Tab troca de herói.', k:'rtwalk'} : mode() === 'normal' ? {t:'Explore a cripta.', k:'rtwalk'} : null;
+  }
   if (mode() === 'normal'){
     if (G.mode === 'explore') return G.sel ? {t:'Explore a cripta.', k:'explore'} : {t:`${TAP} num herói.`};
     const a = G.active; if (G.mode !== 'combat' || !a) return null;
@@ -4239,6 +4688,12 @@ function renderHint(){
     h('button', {class:'hint-x', type:'button', 'aria-label':'Esconder dica', text:'×', onclick:() => { if (H.k) UI.hintHide = H.k; else { SET.hints = false; saveSet(); toast('Dicas desligadas. Religue em Opções.'); } renderHint(); }}));
   el.hidden = false;
 }
+function playPicker(){
+  const box = h('div', {class:'modes play'});
+  const opts = {acao:['Ação', 'Tempo real: anda, ataca e esquiva.'], turnos:['Tática', 'Por turnos, como RPG de mesa. Usado no online.']};
+  const draw = () => box.replaceChildren(...Object.entries(opts).map(([k, [n, d]]) => h('button', {type:'button', class:'mode ' + (k === 'acao' ? 'facil' : 'normal') + ((SET.play || 'acao') === k ? ' on' : ''), onclick:() => { SET.play = k; saveSet(); draw(); }}, h('b', {text:n}), h('small', {text:d}))));
+  draw(); return box;
+}
 function applyBig(){ document.body.classList.toggle('big', !!SET.big); }
 function openStart(){
   const saved = loadParty();
@@ -4250,7 +4705,8 @@ function openStart(){
       h('button', {class:'btn big go', type:'button', onclick: () => { audioInit(); closeModal(); G.stash = []; startGame(defaultParty()); }}, h('span', {}, saved ? 'Nova partida' : 'Jogar agora', h('small', {text:'grupo pronto, começa na hora'})), h('b', {class:'arrow', text:'→'})),
       h('button', {class:'btn big', type:'button', onclick:() => openTutorial(true)}, h('span', {}, 'Como jogar', h('small', {text:'tutorial rápido, 2 minutos'})), h('b', {class:'arrow', text:'?'})),
       NET.available ? h('button', {class:'btn big', type:'button', onclick:() => { audioInit(); openOnline(); }}, h('span', {}, 'Jogar com amigos', h('small', {text:'criar ou entrar numa sala'})), h('b', {class:'arrow', text:'⇄'})) : null),
-    h('span', {class:'lbl', text:'Modo'}), modePicker(),
+    h('span', {class:'lbl', text:'Estilo'}), playPicker(),
+    h('span', {class:'lbl', text:'Dificuldade'}), modePicker(),
     h('span', {class:'lbl', text:'Para quem já conhece'}),
     h('div', {class:'row start-more'},
       h('button', {class:'btn', type:'button', onclick: () => { audioInit(); openCreator(); }}, 'Criar meu grupo'),
@@ -4388,7 +4844,8 @@ function tapeRoll(n){
 }
 function canControl(u){
   if (!u || !u.alive || u.down) return false;
-  if (!online() || isHost()) return u.side === 'hero' || SET.gmControl;
+  if (!online()) return u.side === 'hero' || SET.gmControl;
+  if (isHost()){ if (u.side !== 'hero') return !!SET.gmControl; return !u.owner || u.owner === NET.pid || !NET.players.some(p => p.pid === u.owner && p.online); }
   return u.side === 'hero' && u.owner === NET.pid;
 }
 async function netCheck(){
@@ -4406,12 +4863,16 @@ function netConnect(){
   });
 }
 async function netReconnect(){ if (!online() || NET.ws) return; try { await netConnect(); netSend({t:'resume', code:NET.code, token:NET.token}); } catch(e){ setTimeout(netReconnect, 4000); } }
+// mantém a conexão viva (proxies derrubam conexão parada) e acorda o servidor gratuito
+setInterval(() => { if (NET.ws && NET.ws.readyState === 1 && NET.code) NET.ws.send('{"t":"ping"}'); }, 20000);
+setInterval(() => { if (online()) fetch('/health', {cache:'no-store'}).catch(() => {}); }, 240000);
 function netSend(o){ if (NET.ws && NET.ws.readyState === 1){ NET.ws.send(typeof o === 'string' ? o : JSON.stringify(o)); return true; } if (online()) toast('Sem conexão com o servidor agora.'); return false; }
 function waitMsg(type){ return new Promise((res, rej) => { NET.waiting = {type, res, rej}; setTimeout(() => { if (NET.waiting && NET.waiting.type === type){ NET.waiting = null; rej(new Error('O servidor não respondeu.')); } }, 12000); }); }
 function saveNetSession(){ try { localStorage.setItem('ecos.net', JSON.stringify({code:NET.code, token:NET.token, role:NET.role})); } catch(e){} }
 function loadNetSession(){ try { return JSON.parse(localStorage.getItem('ecos.net') || 'null'); } catch(e){ return null; } }
 function setNetStatus(extra){ const b = $('btnNet'); if (!b) return; const n = NET.players.filter(p => p.online).length; b.textContent = online() ? `Sala ${NET.code || '…'}${extra ? ' · ' + extra : ` · ${n} on-line`}` : 'Online'; b.classList.toggle('on', online()); }
 function resetLocalGame(){
+  rtStop();
   G.units.forEach(u => disposeObj(u.m.root));
   if (G.telegraph) G.telegraph.meshes.forEach(m => disposeObj(m));
   Object.assign(G, {mode:'setup', units:[], order:[], turnIdx:0, round:1, active:null, sel:null, aim:null, busy:false, revealed:false, telegraph:null, won:false, bossLoot:false});
@@ -4437,7 +4898,7 @@ function netOn(m){
       if (NET.tape.length && NET.tapeStart + NET.tape.length === m.start) NET.tape.push(...m.values);
       else { NET.tape = m.values.slice(); NET.tapeStart = m.start; NET.tapePos = m.start; }
       NET.tapeReq = false; break;
-    case 'players': NET.players = m.players; if (NET.room) NET.room.host = m.host; setNetStatus(); renderNetDrawer(); break;
+    case 'players': NET.players = m.players; if (NET.room) NET.room.host = m.host; setNetStatus(); renderNetDrawer(); renderHint(); break;
     case 'party': NET.party = m.party; NET.trades = m.trades || []; G.stash = m.stash || []; applyPartyRecords(); renderHUD(); renderNetDrawer(); if (UI.shopDraw) UI.shopDraw(); break;
     case 'snap': if (isGuest()) applySnap(m.s); break;
     case 'fx': if (isGuest()) replayFx(m.n, m.a); break;
@@ -4475,6 +4936,7 @@ function netPartySync(){
   }, 300);
 }
 async function netCreate(){
+  if (G.mode === 'action'){ rtStop(); G.mode = RT.fight ? 'explore' : 'explore'; G.units.forEach(u => { if (u.side === 'hero' || u.alive){ const t = rtTileOf(u.wx, u.wz); u.c = t.c; u.r = t.r; u.wx = tx(u.c); u.wz = tz(u.r); } }); $('hotbar').hidden = false; renderHUD(); }
   const name = NET.wantHost && NET.wantHost.name || 'Mestre';
   try {
     if (!NET.ws) await netConnect();
@@ -4702,6 +5164,7 @@ function startGame(party, saved){
   if (NET.wantHost) netCreate();
   saveParty();
   renderHUD(); updatePreview();
+  if (SET.play !== 'turnos' && !NET.wantHost && !online()) rtStart();
 }
 let lastSim = 0;
 function loop(){
@@ -4730,6 +5193,7 @@ function simulate(maxDt=.05){
   const a = G.active, s = G.sel;
   W3.actRing.visible = !!(a && a.alive && !hidden(a)); if (W3.actRing.visible){ W3.actRing.position.set(a.wx, .04 + (a.m.lift || 0), a.wz); W3.actRing.material.opacity = .6 + .3*Math.sin(t*4); }
   W3.selRing.visible = !!(s && s !== a && s.alive && !hidden(s)); if (W3.selRing.visible) W3.selRing.position.set(s.wx, .045 + (s.m.lift || 0), s.wz);
+  if (G.mode === 'action') try { rtUpdate(dt); } catch(e){ console.error(e); }
   updateParticles(dt); updateFx(dt, t); updateCamera(dt);
 }
 const waiters = [];
