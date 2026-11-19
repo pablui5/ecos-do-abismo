@@ -4111,15 +4111,19 @@ const wd = (a, b) => Math.hypot(a.wx - b.wx, a.wz - b.wz);
 function rtInit(u){ if (!u.rt) u.rt = {atk:0, dodge:0, inv:0, cd:{}, busy:0, wind:0, tell:0, think:0, stuck:0, lx:u.wx, lz:u.wz, path:null, potion:0}; return u.rt; }
 function rtTileOf(x, z){ return {c:Math.round(x / T + 6), r:Math.round(z / T + 11)}; }
 function rtFree(x, z){
-  const q = T * .3;
+  const q = T * .22;
   for (const [dx, dz] of [[0,0],[q,0],[-q,0],[0,q],[0,-q]]){ const t = rtTileOf(x + dx, z + dz); if (!walkable(t.c, t.r)) return false; }
   return true;
 }
 // move com deslize nas paredes; devolve a distância andada
+function rtCenterOk(x, z){ const t = rtTileOf(x, z); return walkable(t.c, t.r); }
 function rtStep(u, dx, dz){
   const x0 = u.wx, z0 = u.wz;
-  if (rtFree(u.wx + dx, u.wz + dz)){ u.wx += dx; u.wz += dz; }
-  else { if (dx && rtFree(u.wx + dx, u.wz)) u.wx += dx; if (dz && rtFree(u.wx, u.wz + dz)) u.wz += dz; }
+  // encostado na parede: deixa sair (só o centro precisa estar no chão) e puxa de leve pro meio do quadrado
+  const ok = rtFree(u.wx, u.wz) ? rtFree : rtCenterOk;
+  if (ok(u.wx + dx, u.wz + dz)){ u.wx += dx; u.wz += dz; }
+  else { if (dx && ok(u.wx + dx, u.wz)) u.wx += dx; if (dz && ok(u.wx, u.wz + dz)) u.wz += dz; }
+
   const t = rtTileOf(u.wx, u.wz); u.c = t.c; u.r = t.r;
   return Math.hypot(u.wx - x0, u.wz - z0);
 }
@@ -4376,8 +4380,10 @@ function rtUpdate(dt){
   const il = Math.hypot(ix, iz);
   if (il > .15 && rtInit(L).busy <= 0 + .1){
     const nx = ix / Math.max(1, il), nz = iz / Math.max(1, il);
-    const fx = -Math.sin(CAM.az), fz = -Math.cos(CAM.az), rx = Math.cos(CAM.az), rz = -Math.sin(CAM.az);
-    const wx = rx * nx - fx * nz, wz = rz * nx - fz * nz; const sp = T * (4.6 + (speedInfo(L).total - 5) * .25) * Math.min(1, il);
+    // direção relativa ao que aparece na tela: "cima" é para onde a câmera olha
+    const cf = new THREE.Vector3(); camera.getWorldDirection(cf); cf.y = 0; if (cf.lengthSq() < 1e-6) cf.set(0, 0, -1); cf.normalize();
+    const fx = cf.x, fz = cf.z, rx = -fz, rz = fx;
+    let wx = rx * nx - fx * nz, wz = rz * nx - fz * nz; const wl = Math.hypot(wx, wz) || 1; wx /= wl; wz /= wl; const sp = T * (4.6 + (speedInfo(L).total - 5) * .25) * Math.min(1, il);
     RT.dir = {x:wx, z:wz};
     if (rtInit(L).busy <= 0){ rtStep(L, wx * sp * dt, wz * sp * dt); L.facing = Math.atan2(wx, wz); rtWalkAnim(L, true); }
   } else { RT.dir = null; rtWalkAnim(L, false); }
@@ -5193,7 +5199,8 @@ function simulate(maxDt=.05){
   const a = G.active, s = G.sel;
   W3.actRing.visible = !!(a && a.alive && !hidden(a)); if (W3.actRing.visible){ W3.actRing.position.set(a.wx, .04 + (a.m.lift || 0), a.wz); W3.actRing.material.opacity = .6 + .3*Math.sin(t*4); }
   W3.selRing.visible = !!(s && s !== a && s.alive && !hidden(s)); if (W3.selRing.visible) W3.selRing.position.set(s.wx, .045 + (s.m.lift || 0), s.wz);
-  if (G.mode === 'action') try { rtUpdate(dt); } catch(e){ console.error(e); }
+  // passos curtos: em aparelho lento o herói não 'pula' pra dentro da parede
+  if (G.mode === 'action') try { let left = Math.min(dt, .3); while (left > 1e-4){ const st = Math.min(.033, left); rtUpdate(st); left -= st; } } catch(e){ console.error(e); }
   updateParticles(dt); updateFx(dt, t); updateCamera(dt);
 }
 const waiters = [];
@@ -5221,7 +5228,7 @@ function boot(){
   requestAnimationFrame(loop);
   applyBig();
   netCheck().finally(() => SET.tutSeen ? openStart() : openTutorial(true));
-  if (location.hostname === 'localhost') window.__ecos = {NET, netJoin, netCreate, applySnap, G, perform, endTurn, startGame, defaultParty, closeModal, revealSanctum, moveUnit, unitAt, SET, abilityList, canUse, validTarget, equip, WEAPONS, WEAPON_LIST, buildWeapon, attackProfile, openArsenal, openShop, get renderer(){ return renderer; }, get scene(){ return scene; }, get camera(){ return camera; }};
+  if (location.hostname === 'localhost') window.__ecos = {RT, rtStep, rtCenterOk, speedInfo, rtFree, rtTileOf, walkable, NET, netJoin, netCreate, applySnap, G, perform, endTurn, startGame, defaultParty, closeModal, revealSanctum, moveUnit, unitAt, SET, abilityList, canUse, validTarget, equip, WEAPONS, WEAPON_LIST, buildWeapon, attackProfile, openArsenal, openShop, get renderer(){ return renderer; }, get scene(){ return scene; }, get camera(){ return camera; }};
 }
 boot();
 })();
